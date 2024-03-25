@@ -7,15 +7,28 @@ pub enum TokenType {
     IDENT,
     INT,
     ASSIGN,
+    EQ,
+    NOTEQ,
     PLUS,
+    MINUS,
+    BANG,
+    ASTERISK,
+    SLASH,
     COMMA,
     SEMICOLON,
     LPAREN,
     RPAREN,
     LBRACE,
     RBRACE,
+    LT,
+    GT,
     FUNCTION,
     LET,
+    TRUE,
+    FALSE,
+    IF,
+    ELSE,
+    RETURN
 }
 
 
@@ -32,7 +45,6 @@ impl Token{
         };
     }
 }
-
 pub struct Keywords {
     pub map: HashMap<&'static str, TokenType>
 }
@@ -43,14 +55,17 @@ impl Keywords {
             None => return TokenType::IDENT.clone()
         }
     }
-
 }
-
 impl Default for Keywords {
     fn default() -> Self {
         let mut map = HashMap::new();
         map.insert("fn", TokenType::FUNCTION);
         map.insert("let", TokenType::LET);
+        map.insert("true", TokenType::TRUE);
+        map.insert("false", TokenType::FALSE);
+        map.insert("if", TokenType::IF);
+        map.insert("else", TokenType::ELSE);
+        map.insert("return", TokenType::RETURN);
 
         Keywords { map }
     }

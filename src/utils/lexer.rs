@@ -31,19 +31,38 @@ impl Lexer {
         self.read_position += 1;
     }
 
-    pub fn next_token(&mut self) -> Token {
+    pub fn next_token(&mut self, keywords: &Keywords) -> Token {
         // TODO: Find a way to initialize 'keywords' only once
-        let keywords = Keywords::default();
         self.skip_space();
         let tok = match self.ch {
-            '=' => Token::new_token(TokenType::ASSIGN, self.ch.to_string()),
             '(' => Token::new_token(TokenType::LPAREN, self.ch.to_string()),
             ')' => Token::new_token(TokenType::RPAREN, self.ch.to_string()),
             '{' => Token::new_token(TokenType::LBRACE, self.ch.to_string()),
             '}' => Token::new_token(TokenType::RBRACE, self.ch.to_string()),
             ',' => Token::new_token(TokenType::COMMA, self.ch.to_string()),
             '+' => Token::new_token(TokenType::PLUS, self.ch.to_string()),
+            '-' => Token::new_token(TokenType::MINUS, self.ch.to_string()),
+            '/' => Token::new_token(TokenType::SLASH, self.ch.to_string()),
+            '*' => Token::new_token(TokenType::ASTERISK, self.ch.to_string()),
+            '<' => Token::new_token(TokenType::LT, self.ch.to_string()),
+            '>' => Token::new_token(TokenType::GT, self.ch.to_string()),
             ';' => Token::new_token(TokenType::SEMICOLON, self.ch.to_string()),
+            '!' => {
+                if self.peek_char() == '=' {
+                    self.read_char();
+                    Token::new_token(TokenType::NOTEQ, "!=".to_string())
+                } else {
+                    Token::new_token(TokenType::BANG, self.ch.to_string())
+                }
+            }
+            '=' => {
+                if self.peek_char() == '=' {
+                    self.read_char();
+                    Token::new_token(TokenType::EQ, "==".to_string())
+                } else {
+                    Token::new_token(TokenType::ASSIGN, self.ch.to_string())
+                }
+            }
             '\0' => Token::new_token(TokenType::EOF, self.ch.to_string()),
             _ => {
                 if self.ch.is_alphabetic() {
@@ -80,6 +99,14 @@ impl Lexer {
 
     fn is_letter(&mut self) -> bool {
         return self.ch.is_alphabetic() || self.ch == '_';
+    }
+
+    fn peek_char(&mut self) -> char {
+        if self.read_position >= self.input.len() {
+            return '\0';
+        } else {
+            return self.input.chars().nth(self.read_position).unwrap();
+        }
     }
 
     fn skip_space(&mut self) {
