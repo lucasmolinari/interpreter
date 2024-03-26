@@ -1,6 +1,5 @@
-use super::token::Keywords;
-use super::token::Token;
-use super::token::TokenType;
+use crate::lexer_utils::token::{Token, TokenType, Keywords};
+
 #[derive(Debug)]
 pub struct Lexer {
     pub input: String,
