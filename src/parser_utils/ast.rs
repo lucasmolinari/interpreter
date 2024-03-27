@@ -8,7 +8,7 @@ pub trait Statement: Node {
 }
 impl fmt::Debug for dyn Statement {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.token_literal())
+        write!(f, "{:?}", self.token_literal())
     }
 }
 pub trait Expression: Node {
