@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 use crate::lexer_utils::lexer::Lexer;
-use crate::lexer_utils::token::{TokenType, Keywords};
+use crate::lexer_utils::token::TokenType;
 
 pub fn start(){
     println!("q! for exit.");
@@ -17,10 +17,9 @@ pub fn start(){
         }
 
         let mut l = Lexer::new(input);
-        let keywords = Keywords::default(); 
         
         loop {
-            let tok = l.next_token(&keywords);
+            let tok = l.next_token();
             println!("{:?}", tok);
             if tok.token_type == TokenType::EOF {
                 break;

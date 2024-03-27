@@ -3,6 +3,7 @@ use crate::lexer_utils::token::{Token, TokenType, Keywords};
 #[derive(Debug)]
 pub struct Lexer {
     pub input: String,
+    pub keywords: Keywords,
     pub position: usize,      // current position
     pub read_position: usize, // next position
     pub ch: char,             // current char under analysis
@@ -12,6 +13,7 @@ impl Lexer {
     pub fn new(input: String) -> Lexer {
         let mut l = Lexer {
             input: input,
+            keywords: Keywords::default(),
             position: 0,
             read_position: 0,
             ch: '\0',
@@ -30,7 +32,7 @@ impl Lexer {
         self.read_position += 1;
     }
 
-    pub fn next_token(&mut self, keywords: &Keywords) -> Token {
+    pub fn next_token(&mut self) -> Token {
         // TODO: Find a way to initialize 'keywords' only once
         self.skip_space();
         let tok = match self.ch {
@@ -66,7 +68,7 @@ impl Lexer {
             _ => {
                 if self.ch.is_alphabetic() {
                     let keyword = self.read_identifier();
-                    let tok_type = keywords.check_ident(&keyword);
+                    let tok_type = self.keywords.check_ident(&keyword);
                     return Token::new_token(tok_type, keyword);
                 } else if self.ch.is_alphanumeric() {
                     let int = self.read_int();

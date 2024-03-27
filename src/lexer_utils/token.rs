@@ -1,6 +1,6 @@
 use::std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum TokenType {
     ILLEGAL,
     EOF,
@@ -32,7 +32,7 @@ pub enum TokenType {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub literal: String,
@@ -45,6 +45,7 @@ impl Token{
         };
     }
 }
+#[derive(Debug)]
 pub struct Keywords {
     pub map: HashMap<&'static str, TokenType>
 }
