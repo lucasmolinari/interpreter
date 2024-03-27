@@ -1,7 +1,9 @@
 use crate::lexer_utils::token::Token;
 use std::fmt;
 pub trait Node {
-    fn token_literal(&self) -> String;
+    fn token_literal(&self) -> String{
+        return "".to_string();
+    }
 }
 pub trait Statement: Node {
     fn statement_node(&self);
@@ -13,6 +15,18 @@ impl fmt::Debug for dyn Statement {
 }
 pub trait Expression: Node {
     fn expression_node(&self);
+}
+
+#[derive(Debug)]
+pub struct Identifier {
+    pub token: Token,
+    pub value: String,
+}
+impl Identifier {
+    fn expression_node(&self) {}
+    fn token_literal(&self) -> String {
+        return self.token.literal.clone();
+    }
 }
 #[derive(Debug)]
 pub struct LetStatement {
@@ -29,19 +43,20 @@ impl Node for LetStatement {
 impl Statement for LetStatement {
     fn statement_node(&self) {}
 }
-
 #[derive(Debug)]
-pub struct Identifier {
+pub struct ReturnStatement {
     pub token: Token,
-    pub value: String,
+    // pub return_value: Box<dyn Expression>,
+    pub return_value: String,
 }
-impl Identifier {
-    fn expression_node(&self) {}
+impl Node for ReturnStatement {
     fn token_literal(&self) -> String {
         return self.token.literal.clone();
     }
 }
-
+impl Statement for ReturnStatement {
+    fn statement_node(&self) {}
+}
 pub struct Program {
     pub statements: Vec<Box<dyn Statement>>,
 }

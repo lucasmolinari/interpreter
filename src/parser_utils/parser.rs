@@ -1,6 +1,8 @@
 use crate::lexer_utils::lexer::*;
 use crate::lexer_utils::token::*;
-use crate::parser_utils::ast::{Identifier, LetStatement, Program};
+use crate::parser_utils::ast::{Identifier, LetStatement, ReturnStatement, Program};
+
+use super::ast::Statement;
 
 #[derive(Debug)]
 pub struct Parser {
@@ -33,21 +35,22 @@ impl Parser {
         while !self.cur_token_is(TokenType::EOF) {
             let stmt = self.parse_statement();
             if stmt.is_some() {
-                prg.statements.push(Box::new(stmt.unwrap()));
+                prg.statements.push(stmt.unwrap());
             }
             self.next_token();
         }
         return prg;
     }
 
-    fn parse_statement(&mut self) -> Option<LetStatement> {
+    fn parse_statement(&mut self) -> Option<Box<dyn Statement>> {
         match self.cur_token.token_type {
             TokenType::LET => return self.parse_let_statement(),
+            TokenType::RETURN => return self.parse_return_statement(),
             _ => return None,
         }
     }
 
-    fn parse_let_statement(&mut self) -> Option<LetStatement> {
+    fn parse_let_statement(&mut self) -> Option<Box<dyn Statement>> {
         let token = self.cur_token.clone(); // This should be the LET token
 
         if self.expect_peek(TokenType::IDENT).is_err() {
@@ -67,13 +70,27 @@ impl Parser {
         let stmt = LetStatement {
             token: token,
             name: name,
-            value: "value".to_string(),
+            value: "Let Value".to_string(),
         };
         while !self.cur_token_is(TokenType::SEMICOLON) {
             self.next_token()
         }
         println!("LetStatement: {:?}", stmt);
-        return Some(stmt);
+        return Some(Box::new(stmt));
+    }
+
+    fn parse_return_statement(&mut self) -> Option<Box<dyn Statement>> {
+        let token = self.cur_token.clone();
+        self.next_token();
+        let stmt = ReturnStatement {
+            token: token,
+            return_value: "Return Value".to_string()
+        };
+        while !self.cur_token_is(TokenType::SEMICOLON){
+            self.next_token()
+        }
+        println!("ReturnStatement: {:?}", stmt);
+        return Some(Box::new(stmt));
     }
 
     fn cur_token_is(&self, t: TokenType) -> bool {
