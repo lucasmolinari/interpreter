@@ -1,9 +1,10 @@
 use crate::lexer_utils::token::Token;
 use std::fmt;
 pub trait Node {
-    fn token_literal(&self) -> String{
+    fn token_literal(&self) -> String {
         return "".to_string();
     }
+    fn string(&self) -> String;
 }
 pub trait Statement: Node {
     fn statement_node(&self);
@@ -22,11 +23,16 @@ pub struct Identifier {
     pub token: Token,
     pub value: String,
 }
-impl Identifier {
-    fn expression_node(&self) {}
+impl Node for Identifier {
     fn token_literal(&self) -> String {
-        return self.token.literal.clone();
+        return self.token.literal.to_string();
     }
+    fn string(&self) -> String {
+        return self.value.clone();
+    }
+}
+impl Expression for Identifier {
+    fn expression_node(&self) {}
 }
 #[derive(Debug)]
 pub struct LetStatement {
@@ -37,9 +43,18 @@ pub struct LetStatement {
 }
 impl Node for LetStatement {
     fn token_literal(&self) -> String {
-        return self.token.literal.clone();
+        return self.token.literal.to_string();
+    }
+    fn string(&self) -> String {
+        return format!(
+            "{} {} = {};",
+            self.token_literal(),
+            self.name.value,
+            self.value
+        )
     }
 }
+
 impl Statement for LetStatement {
     fn statement_node(&self) {}
 }
@@ -51,29 +66,60 @@ pub struct ReturnStatement {
 }
 impl Node for ReturnStatement {
     fn token_literal(&self) -> String {
-        return self.token.literal.clone();
+        return self.token.literal.to_string();
+    }
+    fn string(&self) -> String {
+        return format!("{} {};", self.token_literal(), self.return_value,);
     }
 }
 impl Statement for ReturnStatement {
     fn statement_node(&self) {}
 }
+
+pub struct ExpressionStatement {
+    pub token: Token,
+    // pub expression: Box<dyn Expression>,
+    pub expression: String,
+}
+impl Node for ExpressionStatement {
+    fn token_literal(&self) -> String {
+        return self.token.literal.clone();
+    }
+    fn string(&self) -> String {
+        let mut result = String::new();
+        result.push_str(&format!(""));
+
+        return result;
+    }
+}
+impl Statement for ExpressionStatement {
+    fn statement_node(&self) {}
+}
+
 pub struct Program {
     pub statements: Vec<Box<dyn Statement>>,
 }
 impl Program {
-    fn token_literal(&self) -> String {
+    pub fn token_literal(&self) -> String {
         if self.statements.len() > 0 {
             return self.statements[0].token_literal();
         } else {
             return "".to_string();
         }
     }
+    pub fn string(&self) -> String {
+        let mut result = String::new();
+        for stmt in &self.statements {
+            result.push_str(&format!("{:?}", stmt))
+        }
+        return result;
+    }
 }
 impl fmt::Debug for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut result = String::new();
-        for statement in &self.statements {
-            result.push_str(&format!("{:?}", statement));
+        for stmt in &self.statements {
+            result.push_str(&format!("{:?}", stmt));
         }
         write!(f, "{}", result)
     }

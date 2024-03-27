@@ -1,5 +1,6 @@
 use crate::lexer_utils::lexer::*;
 use crate::lexer_utils::token::*;
+use crate::parser_utils::ast::Node;
 use crate::parser_utils::ast::{Identifier, LetStatement, ReturnStatement, Program};
 
 use super::ast::Statement;
@@ -70,12 +71,12 @@ impl Parser {
         let stmt = LetStatement {
             token: token,
             name: name,
-            value: "Let Value".to_string(),
+            value: "LetValue".to_string(),
         };
         while !self.cur_token_is(TokenType::SEMICOLON) {
             self.next_token()
         }
-        println!("LetStatement: {:?}", stmt);
+        println!("LetStatement: {}", stmt.string());
         return Some(Box::new(stmt));
     }
 
@@ -84,12 +85,12 @@ impl Parser {
         self.next_token();
         let stmt = ReturnStatement {
             token: token,
-            return_value: "Return Value".to_string()
+            return_value: "ReturnValue".to_string()
         };
         while !self.cur_token_is(TokenType::SEMICOLON){
             self.next_token()
         }
-        println!("ReturnStatement: {:?}", stmt);
+        println!("ReturnStatement: {}", stmt.string());
         return Some(Box::new(stmt));
     }
 

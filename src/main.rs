@@ -16,6 +16,7 @@ fn main() {
     
     p.parse_program();
     
+
     let e = p.errors();
     println!("Parser has {} errors:\n{:?}", e.len(), e);
 }
