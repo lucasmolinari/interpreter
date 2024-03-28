@@ -79,7 +79,7 @@ impl Statement for ReturnStatement {
 pub struct ExpressionStatement {
     pub token: Token,
     // pub expression: Box<dyn Expression>,
-    pub expression: String,
+    pub expression: Box<dyn Expression>,
 }
 impl Node for ExpressionStatement {
     fn token_literal(&self) -> String {

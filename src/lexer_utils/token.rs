@@ -1,6 +1,5 @@
 use::std::collections::HashMap;
-
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy, Hash, Eq)]
 pub enum TokenType {
     ILLEGAL,
     EOF,
@@ -52,7 +51,7 @@ pub struct Keywords {
 impl Keywords {
     pub fn check_ident (&self, keyword: &str) -> TokenType {
         match self.map.get(keyword) {
-            Some(&ref k_word) => return k_word.clone(),
+            Some(k_word) => return k_word.clone(),
             None => return TokenType::IDENT.clone()
         }
     }

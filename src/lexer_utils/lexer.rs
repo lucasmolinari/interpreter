@@ -33,7 +33,6 @@ impl Lexer {
     }
 
     pub fn next_token(&mut self) -> Token {
-        // TODO: Find a way to initialize 'keywords' only once
         self.skip_space();
         let tok = match self.ch {
             '(' => Token::new_token(TokenType::LPAREN, self.ch.to_string()),
