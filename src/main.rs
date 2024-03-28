@@ -6,7 +6,7 @@ mod tests;
 
 // use lexer_utils::repl;
 use tests::TestError;
-
+    
 fn main() {
     // repl::start();
     let mut t = TestError::new();

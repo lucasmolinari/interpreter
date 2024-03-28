@@ -1,9 +1,7 @@
 use crate::lexer_utils::token::Token;
 use std::fmt;
 pub trait Node {
-    fn token_literal(&self) -> String {
-        "".to_string()
-    }
+    fn token_literal(&self) -> String;
     fn string(&self) -> String;
 }
 pub trait Statement: Node {
@@ -18,22 +16,7 @@ pub trait Expression: Node {
     fn expression_node(&self);
 }
 
-#[derive(Debug)]
-pub struct Identifier {
-    pub token: Token,
-    pub value: String,
-}
-impl Node for Identifier {
-    fn token_literal(&self) -> String {
-        self.token.literal.to_string()
-    }
-    fn string(&self) -> String {
-        self.value.clone()
-    }
-}
-impl Expression for Identifier {
-    fn expression_node(&self) {}
-}
+
 #[derive(Debug)]
 pub struct LetStatement {
     pub token: Token,
@@ -96,6 +79,39 @@ impl Statement for ExpressionStatement {
     fn statement_node(&self) {}
 }
 
+#[derive(Debug)]
+pub struct Identifier {
+    pub token: Token,
+    pub value: String,
+}
+impl Node for Identifier {
+    fn token_literal(&self) -> String {
+        self.token.literal.to_string()
+    }
+    fn string(&self) -> String {
+        self.value.clone()
+    }
+}
+impl Expression for Identifier {
+    fn expression_node(&self) {}
+}
+
+#[derive(Debug)]
+pub struct IntegerLiteral {
+    pub token: Token,
+    pub value: i64,
+}
+impl Node for IntegerLiteral {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+    fn string(&self) -> String {
+        self.token_literal()
+    }
+}
+impl Expression for IntegerLiteral {
+    fn expression_node(&self) {}
+}
 pub struct Program {
     pub statements: Vec<Box<dyn Statement>>,
 }

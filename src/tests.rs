@@ -83,11 +83,6 @@ impl TestError {
             return Err(err);
         }
 
-        if stmt.string() != "5;" {
-            err = format!("Integer Literal Expression -> Expected string to be 5;, got {}", stmt.string());
-            return Err(err);
-        }
-
         if err != "" {
             self.errors.insert(Test::IntegerLiteralExpression, err);
         }

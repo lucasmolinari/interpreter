@@ -3,13 +3,15 @@ use std::collections::HashMap;
 use crate::lexer_utils::lexer::*;
 use crate::lexer_utils::token::*;
 use crate::parser_utils::ast::Node;
-use crate::parser_utils::ast::{Expression, Identifier, LetStatement, Program, ReturnStatement};
+use crate::parser_utils::ast::{
+    Expression, Identifier, IntegerLiteral, LetStatement, Program, ReturnStatement,
+};
 
 use super::ast::ExpressionStatement;
 use super::ast::Statement;
 
-type PrefixParse = fn(&Parser) -> Box<dyn Expression>;
-type InfixParse = fn(&Parser, Box<dyn Expression>) -> Box<dyn Expression>;
+type PrefixParse = fn(&mut Parser) -> Result<Box<dyn Expression>, ()>;
+type InfixParse = fn(&mut Parser, Box<dyn Expression>) -> Result<Box<dyn Expression>, ()>;
 
 #[derive(Debug)]
 pub struct Parser {
@@ -36,9 +38,9 @@ impl Parser {
 
         p
     }
-    fn register_parsers(&mut self){
+    fn register_parsers(&mut self) {
         self.register_prefix(TokenType::IDENT, Self::parse_identifier);
-
+        self.register_prefix(TokenType::INT, Self::parse_integer_literal);
     }
     fn next_token(&mut self) {
         self.cur_token = self.peek_token.clone();
@@ -61,7 +63,7 @@ impl Parser {
 
     fn parse_statement(&mut self) -> Result<Box<dyn Statement>, ()> {
         match self.cur_token.token_type {
-            TokenType::LET =>  self.parse_let_statement(),
+            TokenType::LET => self.parse_let_statement(),
             TokenType::RETURN => self.parse_return_statement(),
             _ => self.parse_expression_statement(),
         }
@@ -113,14 +115,14 @@ impl Parser {
     fn parse_expression_statement(&mut self) -> Result<Box<dyn Statement>, ()> {
         let expression = match self.parse_expression(Precedence::LOWEST) {
             Ok(expr) => expr,
-            Err(()) => return Err(())
+            Err(()) => return Err(()),
         };
 
         let stmt = ExpressionStatement {
             token: self.cur_token.clone(),
-            expression: expression
+            expression: expression,
         };
-        if self.peek_token_is(TokenType::SEMICOLON){
+        if self.peek_token_is(TokenType::SEMICOLON) {
             self.next_token()
         }
         Ok(Box::new(stmt))
@@ -129,8 +131,32 @@ impl Parser {
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Box<dyn Expression>, ()> {
         let prefix = self.prefix_parse.get(&self.cur_token.token_type);
         match prefix {
-            Some(prefix_fn) => Ok(prefix_fn(self)),
-            None => Err(())
+            Some(prefix_fn) => prefix_fn(self),
+            None => Err(()),
+        }
+    }
+
+    pub fn parse_identifier(&mut self) -> Result<Box<dyn Expression>, ()> {
+        Ok(Box::new(Identifier {
+            token: self.cur_token.clone(),
+            value: self.cur_token.literal.clone(),
+        }))
+    }
+
+    pub fn parse_integer_literal(&mut self) -> Result<Box<dyn Expression>, ()>{
+        let converted = self.cur_token.literal.parse::<i64>();
+        match converted {
+            Ok(n) => {
+                return Ok(Box::new(IntegerLiteral {
+                    token: self.cur_token.clone(),
+                    value: n
+                }))
+            }
+            Err(_) => {
+                let e = format!("Could not parse {} as integer", self.cur_token.literal);
+                self.errors.push(e);
+                Err(())
+            }
         }
     }
 
@@ -140,13 +166,6 @@ impl Parser {
 
     fn register_infix(&mut self, t: TokenType, fn_ptr: InfixParse) {
         self.infix_parse.insert(t, fn_ptr);
-    }
-
-    pub fn parse_identifier(&self) -> Box<dyn Expression> {
-        Box::new(Identifier {
-            token: self.cur_token.clone(),
-            value: self.cur_token.literal.clone(),
-        })
     }
 
     fn cur_token_is(&self, t: TokenType) -> bool {
@@ -185,5 +204,5 @@ enum Precedence {
     SUM,
     PRODUCT,
     PREFIX,
-    CALL
+    CALL,
 }
