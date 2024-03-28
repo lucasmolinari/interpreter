@@ -33,7 +33,8 @@ impl Parser {
             infix_parse: HashMap::new(),
         };
         p.register_parsers();
-        return p;
+
+        p
     }
     fn register_parsers(&mut self){
         self.register_prefix(TokenType::IDENT, Self::parse_identifier);
@@ -55,14 +56,14 @@ impl Parser {
             }
             self.next_token();
         }
-        return prg;
+        prg
     }
 
     fn parse_statement(&mut self) -> Result<Box<dyn Statement>, ()> {
         match self.cur_token.token_type {
-            TokenType::LET => return self.parse_let_statement(),
-            TokenType::RETURN => return self.parse_return_statement(),
-            _ => return self.parse_expression_statement(),
+            TokenType::LET =>  self.parse_let_statement(),
+            TokenType::RETURN => self.parse_return_statement(),
+            _ => self.parse_expression_statement(),
         }
     }
 
@@ -92,7 +93,7 @@ impl Parser {
             self.next_token()
         }
         println!("LetStatement: {}", stmt.string());
-        return Ok(Box::new(stmt));
+        Ok(Box::new(stmt))
     }
 
     fn parse_return_statement(&mut self) -> Result<Box<dyn Statement>, ()> {
@@ -106,7 +107,7 @@ impl Parser {
             self.next_token()
         }
         println!("ReturnStatement: {}", stmt.string());
-        return Ok(Box::new(stmt));
+        Ok(Box::new(stmt))
     }
 
     fn parse_expression_statement(&mut self) -> Result<Box<dyn Statement>, ()> {
@@ -122,7 +123,7 @@ impl Parser {
         if self.peek_token_is(TokenType::SEMICOLON){
             self.next_token()
         }
-        return Ok(Box::new(stmt))
+        Ok(Box::new(stmt))
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Box<dyn Expression>, ()> {
@@ -149,20 +150,20 @@ impl Parser {
     }
 
     fn cur_token_is(&self, t: TokenType) -> bool {
-        return t == self.cur_token.token_type;
+        t == self.cur_token.token_type
     }
 
     fn peek_token_is(&self, t: TokenType) -> bool {
-        return t == self.peek_token.token_type;
+        t == self.peek_token.token_type
     }
 
     fn expect_peek(&mut self, t: TokenType) -> Result<(), ()> {
         if self.peek_token_is(t) {
             self.next_token();
-            return Ok(());
+            Ok(())
         } else {
             self.peek_error(t);
-            return Err(());
+            Err(())
         }
     }
     fn peek_error(&mut self, t: TokenType) {
@@ -173,7 +174,7 @@ impl Parser {
         self.errors.push(e);
     }
     pub fn errors(&self) -> &Vec<String> {
-        return &self.errors;
+        &self.errors
     }
 }
 

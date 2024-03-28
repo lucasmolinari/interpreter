@@ -1,4 +1,4 @@
-use::std::collections::HashMap;
+use ::std::collections::HashMap;
 #[derive(Debug, Clone, PartialEq, Copy, Hash, Eq)]
 pub enum TokenType {
     ILLEGAL,
@@ -27,32 +27,31 @@ pub enum TokenType {
     FALSE,
     IF,
     ELSE,
-    RETURN
+    RETURN,
 }
-
 
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub literal: String,
 }
-impl Token{
+impl Token {
     pub fn new_token(token_type: TokenType, literal: String) -> Token {
-        return Token {
+        Token {
             token_type: token_type,
             literal: literal,
-        };
+        }
     }
 }
 #[derive(Debug)]
 pub struct Keywords {
-    pub map: HashMap<&'static str, TokenType>
+    pub map: HashMap<&'static str, TokenType>,
 }
 impl Keywords {
-    pub fn check_ident (&self, keyword: &str) -> TokenType {
+    pub fn check_ident(&self, keyword: &str) -> TokenType {
         match self.map.get(keyword) {
-            Some(k_word) => return k_word.clone(),
-            None => return TokenType::IDENT.clone()
+            Some(k_word) => k_word.clone(),
+            None => TokenType::IDENT.clone(),
         }
     }
 }

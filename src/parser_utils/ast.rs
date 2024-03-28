@@ -2,7 +2,7 @@ use crate::lexer_utils::token::Token;
 use std::fmt;
 pub trait Node {
     fn token_literal(&self) -> String {
-        return "".to_string();
+        "".to_string()
     }
     fn string(&self) -> String;
 }
@@ -25,10 +25,10 @@ pub struct Identifier {
 }
 impl Node for Identifier {
     fn token_literal(&self) -> String {
-        return self.token.literal.to_string();
+        self.token.literal.to_string()
     }
     fn string(&self) -> String {
-        return self.value.clone();
+        self.value.clone()
     }
 }
 impl Expression for Identifier {
@@ -43,10 +43,10 @@ pub struct LetStatement {
 }
 impl Node for LetStatement {
     fn token_literal(&self) -> String {
-        return self.token.literal.to_string();
+        self.token.literal.to_string()
     }
     fn string(&self) -> String {
-        return format!(
+        format!(
             "{} {} = {};",
             self.token_literal(),
             self.name.value,
@@ -66,10 +66,10 @@ pub struct ReturnStatement {
 }
 impl Node for ReturnStatement {
     fn token_literal(&self) -> String {
-        return self.token.literal.to_string();
+        self.token.literal.to_string()
     }
     fn string(&self) -> String {
-        return format!("{} {};", self.token_literal(), self.return_value,);
+        format!("{} {};", self.token_literal(), self.return_value,)
     }
 }
 impl Statement for ReturnStatement {
@@ -83,13 +83,13 @@ pub struct ExpressionStatement {
 }
 impl Node for ExpressionStatement {
     fn token_literal(&self) -> String {
-        return self.token.literal.clone();
+        self.token.literal.clone()
     }
     fn string(&self) -> String {
         let mut result = String::new();
         result.push_str(&format!(""));
 
-        return result;
+        result
     }
 }
 impl Statement for ExpressionStatement {
@@ -102,9 +102,9 @@ pub struct Program {
 impl Program {
     pub fn token_literal(&self) -> String {
         if self.statements.len() > 0 {
-            return self.statements[0].token_literal();
+            self.statements[0].token_literal()
         } else {
-            return "".to_string();
+            "".to_string()
         }
     }
     pub fn string(&self) -> String {
@@ -112,7 +112,7 @@ impl Program {
         for stmt in &self.statements {
             result.push_str(&format!("{:?}", stmt))
         }
-        return result;
+        result
     }
 }
 impl fmt::Debug for Program {
