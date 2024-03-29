@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::lexer_utils::lexer::*;
 use crate::lexer_utils::token::*;
 use crate::parser_utils::ast::Node;
+use crate::parser_utils::ast::PrefixExpression;
 use crate::parser_utils::ast::{
     Expression, Identifier, IntegerLiteral, LetStatement, Program, ReturnStatement,
 };
@@ -41,6 +42,8 @@ impl Parser {
     fn register_parsers(&mut self) {
         self.register_prefix(TokenType::IDENT, Self::parse_identifier);
         self.register_prefix(TokenType::INT, Self::parse_integer_literal);
+        self.register_prefix(TokenType::BANG, Self::parse_prefix_expression);
+        self.register_prefix(TokenType::MINUS, Self::parse_prefix_expression);
     }
     fn next_token(&mut self) {
         self.cur_token = self.peek_token.clone();
@@ -143,13 +146,13 @@ impl Parser {
         }))
     }
 
-    pub fn parse_integer_literal(&mut self) -> Result<Box<dyn Expression>, ()>{
+    pub fn parse_integer_literal(&mut self) -> Result<Box<dyn Expression>, ()> {
         let converted = self.cur_token.literal.parse::<i64>();
         match converted {
             Ok(n) => {
                 return Ok(Box::new(IntegerLiteral {
                     token: self.cur_token.clone(),
-                    value: n
+                    value: n,
                 }))
             }
             Err(_) => {
@@ -157,6 +160,20 @@ impl Parser {
                 self.errors.push(e);
                 Err(())
             }
+        }
+    }
+
+    pub fn parse_prefix_expression(&mut self) -> Result<Box<dyn Expression>, ()> {
+        let token = self.cur_token.clone();
+        let literal = self.cur_token.literal.clone();
+        self.next_token();
+        match self.parse_expression(Precedence::PREFIX) {
+            Ok(right) => Ok(Box::new(PrefixExpression {
+                token: token,
+                operator: literal,
+                right: right,
+            })),
+            Err(_) => Err(()),
         }
     }
 

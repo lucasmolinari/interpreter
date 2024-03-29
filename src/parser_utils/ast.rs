@@ -1,7 +1,7 @@
 use crate::lexer_utils::token::Token;
 use std::fmt;
 pub trait Node {
-    fn token_literal(&self) -> String;
+    fn token_literal(&self) -> &String;
     fn string(&self) -> String;
 }
 pub trait Statement: Node {
@@ -16,7 +16,6 @@ pub trait Expression: Node {
     fn expression_node(&self);
 }
 
-
 #[derive(Debug)]
 pub struct LetStatement {
     pub token: Token,
@@ -25,8 +24,8 @@ pub struct LetStatement {
     pub value: String,
 }
 impl Node for LetStatement {
-    fn token_literal(&self) -> String {
-        self.token.literal.to_string()
+    fn token_literal(&self) -> &String {
+        &self.token.literal
     }
     fn string(&self) -> String {
         format!(
@@ -48,8 +47,8 @@ pub struct ReturnStatement {
     pub return_value: String,
 }
 impl Node for ReturnStatement {
-    fn token_literal(&self) -> String {
-        self.token.literal.to_string()
+    fn token_literal(&self) -> &String {
+        &self.token.literal
     }
     fn string(&self) -> String {
         format!("{} {};", self.token_literal(), self.return_value,)
@@ -65,8 +64,8 @@ pub struct ExpressionStatement {
     pub expression: Box<dyn Expression>,
 }
 impl Node for ExpressionStatement {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
+    fn token_literal(&self) -> &String {
+        &self.token.literal
     }
     fn string(&self) -> String {
         let mut result = String::new();
@@ -85,8 +84,8 @@ pub struct Identifier {
     pub value: String,
 }
 impl Node for Identifier {
-    fn token_literal(&self) -> String {
-        self.token.literal.to_string()
+    fn token_literal(&self) -> &String {
+        &self.token.literal
     }
     fn string(&self) -> String {
         self.value.clone()
@@ -102,14 +101,31 @@ pub struct IntegerLiteral {
     pub value: i64,
 }
 impl Node for IntegerLiteral {
-    fn token_literal(&self) -> String {
-        self.token.literal.clone()
+    fn token_literal(&self) -> &String {
+        &self.token.literal
     }
     fn string(&self) -> String {
-        self.token_literal()
+        format!("{}", self.value)
     }
 }
 impl Expression for IntegerLiteral {
+    fn expression_node(&self) {}
+}
+
+pub struct PrefixExpression {
+    pub token: Token,
+    pub operator: String,
+    pub right: Box<dyn Expression>,
+}
+impl Node for PrefixExpression {
+    fn token_literal(&self) -> &String {
+        return &self.token.literal;
+    }
+    fn string(&self) -> String {
+        format!("({} {})", self.operator, self.right.string())
+    }
+}
+impl Expression for PrefixExpression {
     fn expression_node(&self) {}
 }
 pub struct Program {
@@ -118,7 +134,7 @@ pub struct Program {
 impl Program {
     pub fn token_literal(&self) -> String {
         if self.statements.len() > 0 {
-            self.statements[0].token_literal()
+            self.statements[0].token_literal().to_string()
         } else {
             "".to_string()
         }

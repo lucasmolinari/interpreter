@@ -24,6 +24,7 @@ impl TestError {
         let mut results: Vec<Result<String, String>> = Vec::new();
         results.push(self.test_identifier_expresssion());
         results.push(self.test_integer_literal_expression());
+        results.push(self.test_prefix_expression());
         results
     }
 
@@ -39,7 +40,10 @@ impl TestError {
             return Err(err);
         }
         if stmts.len() != 1 {
-            err = format!("Identifier Expression -> Parser has {} statements, expected 1", stmts.len());
+            err = format!(
+                "Identifier Expression -> Parser has {} statements, expected 1",
+                stmts.len()
+            );
             return Err(err);
         }
 
@@ -66,11 +70,17 @@ impl TestError {
 
         let e = p.errors();
         if e.len() > 0 {
-            err = format!("Integer Literal Expression -> Parser has {} errors", e.len());
+            err = format!(
+                "Integer Literal Expression -> Parser has {} errors",
+                e.len()
+            );
             return Err(err);
         }
         if stmts.len() != 1 {
-            err = format!("Integer Literal Expression -> Parser has {} statements, expected 1", stmts.len());
+            err = format!(
+                "Integer Literal Expression -> Parser has {} statements, expected 1",
+                stmts.len()
+            );
             return Err(err);
         }
         let stmt = stmts[0].as_ref();
@@ -87,6 +97,42 @@ impl TestError {
             self.errors.insert(Test::IntegerLiteralExpression, err);
         }
         Ok("Integer Literal Expression -> OK".to_string())
+    }
+
+    pub fn test_prefix_expression(&mut self) -> Result<String, String> {
+        let test_prefix_expression = "!5;".to_string();
+        let mut p = self.init_parser(test_prefix_expression);
+        let stmts = p.parse_program().statements;
+
+        let mut err = String::new();
+
+        let e = p.errors();
+        if e.len() > 0 {
+            err = format!("Prefix Expression -> Parser has {} errors", e.len());
+            return Err(err);
+        }
+
+        if stmts.len() != 1 {
+            err = format!(
+                "Prefix Expression -> Parser has {} statements, expected 1",
+                stmts.len()
+            );
+            return Err(err);
+        }
+
+        let stmt = stmts[0].as_ref();
+        if stmt.token_literal() != "5" {
+            err = format!(
+                "Prefix Expression -> Expected token_literal to be 5, got {}",
+                stmt.token_literal()
+            );
+            return Err(err);
+        }
+
+        if err != "" {
+            self.errors.insert(Test::IntegerLiteralExpression, err);
+        }
+        Ok("Prefix Expression -> OK".to_string())
     }
 
     fn init_parser(&self, lexer_input: String) -> Parser {
