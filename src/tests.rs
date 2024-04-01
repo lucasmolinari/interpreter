@@ -1,96 +1,143 @@
-use std::collections::HashMap;
+use core::panic;
 
 use crate::lexer_utils::lexer::Lexer;
+use crate::lexer_utils::token::TokenType;
 use crate::parser_utils::parser::Parser;
+use crate::tests;
 
-#[derive(Eq, Hash, PartialEq)]
-pub enum Test {
-    IdentifierExpression,
-    IntegerLiteralExpression,
+#[test]
+fn test_lexer() {
+    let input = String::from("let x = 5; let add = fn(x, y) { x + y }; let result = add(5, 5);");
+    let mut l = Lexer::new(input);
+    let tests = vec![
+        ("let", TokenType::LET),
+        ("x", TokenType::IDENT),
+        ("=", TokenType::ASSIGN),
+        ("5", TokenType::INT),
+        (";", TokenType::SEMICOLON),
+        ("let", TokenType::LET),
+        ("add", TokenType::IDENT),
+        ("=", TokenType::ASSIGN),
+        ("fn", TokenType::FUNCTION),
+        ("(", TokenType::LPAREN),
+        ("x", TokenType::IDENT),
+        (",", TokenType::COMMA),
+        ("y", TokenType::IDENT),
+        (")", TokenType::RPAREN),
+        ("{", TokenType::LBRACE),
+        ("x", TokenType::IDENT),
+        ("+", TokenType::PLUS),
+        ("y", TokenType::IDENT),
+        ("}", TokenType::RBRACE),
+        (";", TokenType::SEMICOLON),
+        ("let", TokenType::LET),
+        ("result", TokenType::IDENT),
+        ("=", TokenType::ASSIGN),
+        ("add", TokenType::IDENT),
+        ("(", TokenType::LPAREN),
+        ("5", TokenType::INT),
+        (",", TokenType::COMMA),
+        ("5", TokenType::INT),
+        (")", TokenType::RPAREN),
+        (";", TokenType::SEMICOLON),
+        ("\0", TokenType::EOF),
+    ];
+    for (i, tt) in tests.iter().enumerate() {
+        let tok = l.next_token();
+        assert_eq!(tok.literal, tt.0, "Test [{:?}] - Token Literal is wrong", i);
+        assert_eq!(tok.token_type, tt.1, "Test [{:?}] - Token Type is wrong", i);
+    }
 }
 
-pub struct TestError {
-    pub errors: HashMap<Test, String>,
+#[test]
+fn test_let_statements() {
+    let tests = vec![
+        ("let", "x", "5"),
+        ("let", "y", "true"),
+        ("let", "foobar", "y"),
+    ];
+
+    for tt in tests.iter() {
+        let input = format!("{} {} = {};", tt.0, tt.1, tt.2);
+        let mut l = Lexer::new(input.clone());
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+
+        let stmts = program.statements;
+        assert_eq!(stmts.len(), 1);
+
+        let stmt = stmts.get(0).unwrap();
+        assert_eq!(stmt.token_literal(), tt.0);
+        assert_eq!(stmt.string(), input);
+    }
 }
 
-impl TestError {
-    pub fn new() -> TestError {
-        TestError {
-            errors: HashMap::new(),
-        }
+#[test]
+fn test_return_statements() {
+    let tests = vec![("return", "5"), ("return", "true"), ("return", "foobar")];
+
+    for tt in tests.iter() {
+        let input = format!("{} {};", tt.0, tt.1);
+        let mut l = Lexer::new(input.clone());
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+
+        let stmts = program.statements;
+        assert_eq!(stmts.len(), 1);
+
+        let stmt = stmts.get(0).unwrap();
+        assert_eq!(stmt.token_literal(), tt.0);
+        assert_eq!(stmt.string(), input);
     }
+}
 
-    pub fn test_all(&mut self) -> Vec<Result<String, String>> {
-        let mut results: Vec<Result<String, String>> = Vec::new();
-        results.push(self.test_identifier_expresssion());
-        results.push(self.test_integer_literal_expression());
-        results
-    }
+#[test]
+fn test_identifier_expression() {
+    let input = String::from("foobar;");
+    let mut l = Lexer::new(input.clone());
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
 
-    pub fn test_identifier_expresssion(&mut self) -> Result<String, String> {
-        let test_ident_expression = "foobar;".to_string();
-        let mut p = self.init_parser(test_ident_expression);
-        let stmts = p.parse_program().statements;
+    let stmts = program.statements;
+    assert_eq!(stmts.len(), 1);
 
-        let mut err = String::new();
-        let e = p.errors();
-        if e.len() > 0 {
-            err = format!("Identifier Expression -> Parser has {} errors", e.len());
-            return Err(err);
-        }
-        if stmts.len() != 1 {
-            err = format!("Identifier Expression -> Parser has {} statements, expected 1", stmts.len());
-            return Err(err);
-        }
+    let stmt = stmts.get(0).unwrap();
+    assert_eq!(stmt.token_literal(), "foobar");
+}
 
-        let stmt = stmts[0].as_ref();
-        if stmt.token_literal() != "foobar" {
-            err = format!(
-                "Identifier Expression -> Expected token_literal to be foobar but got {}",
-                stmt.token_literal()
-            );
-            return Err(err);
-        }
-        if err != "" {
-            self.errors.insert(Test::IdentifierExpression, err);
-        }
-        Ok("Identifier Expression -> OK".to_string())
-    }
+#[test]
+fn test_integer_literal_expression() {
+    let input = String::from("5;");
+    let mut l = Lexer::new(input.clone());
+    let mut p = Parser::new(l);
+    let program = p.parse_program();
 
-    pub fn test_integer_literal_expression(&mut self) -> Result<String, String> {
-        let test_int_expression = "5;".to_string();
-        let mut p = self.init_parser(test_int_expression);
-        let stmts = p.parse_program().statements;
+    let stmts = program.statements;
+    assert_eq!(stmts.len(), 1);
 
-        let mut err = String::new();
+    let stmt = stmts.get(0).unwrap();
+    assert_eq!(stmt.token_literal(), "5");
+}
 
-        let e = p.errors();
-        if e.len() > 0 {
-            err = format!("Integer Literal Expression -> Parser has {} errors", e.len());
-            return Err(err);
-        }
-        if stmts.len() != 1 {
-            err = format!("Integer Literal Expression -> Parser has {} statements, expected 1", stmts.len());
-            return Err(err);
-        }
-        let stmt = stmts[0].as_ref();
+#[test]
+fn test_prefix_expression() {
+    let tests = vec![
+        ("!5;", "!", "5"),
+        ("-15;", "-", "15"),
+        ("!foobar;", "!", "foobar"),
+        ("-foobar;", "-", "foobar"),
+    ];
 
-        if stmt.token_literal() != "5" {
-            err = format!(
-                "Integer Literal Expression -> Expected token_literal to be 5, got {}",
-                stmt.token_literal()
-            );
-            return Err(err);
-        }
+    for tt in tests {
+        let mut l = Lexer::new(tt.0.to_string());
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
 
-        if err != "" {
-            self.errors.insert(Test::IntegerLiteralExpression, err);
-        }
-        Ok("Integer Literal Expression -> OK".to_string())
-    }
+        let stmts = program.statements;
+        assert_eq!(stmts.len(), 1);
 
-    fn init_parser(&self, lexer_input: String) -> Parser {
-        let l = Lexer::new(lexer_input);
-        Parser::new(l)
+        let stmt = stmts.get(0).unwrap();
+        println!("{:?}", stmt.token_literal());
+        assert_eq!(stmt.token_literal(), tt.2);
     }
 }

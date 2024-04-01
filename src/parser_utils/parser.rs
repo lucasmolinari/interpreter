@@ -71,7 +71,6 @@ impl Parser {
 
     fn parse_let_statement(&mut self) -> Result<Box<dyn Statement>, ()> {
         let token = self.cur_token.clone(); // This should be the LET token
-
         if self.expect_peek(TokenType::IDENT).is_err() {
             return Err(());
         }
@@ -86,11 +85,15 @@ impl Parser {
             return Err(());
         }
 
+        self.next_token();
+
         let stmt = LetStatement {
             token: token,
             name: name,
-            value: "LetValue".to_string(),
+            value: self.cur_token.literal.clone(),
         };
+
+        self.next_token();
         while !self.cur_token_is(TokenType::SEMICOLON) {
             self.next_token()
         }
@@ -103,7 +106,7 @@ impl Parser {
         self.next_token();
         let stmt = ReturnStatement {
             token: token,
-            return_value: "ReturnValue".to_string(),
+            return_value: self.cur_token.literal.clone(),
         };
         while !self.cur_token_is(TokenType::SEMICOLON) {
             self.next_token()
@@ -147,7 +150,7 @@ impl Parser {
         let converted = self.cur_token.literal.parse::<i64>();
         match converted {
             Ok(n) => {
-                return Ok(Box::new(IntegerLiteral {
+                Ok(Box::new(IntegerLiteral {
                     token: self.cur_token.clone(),
                     value: n
                 }))
