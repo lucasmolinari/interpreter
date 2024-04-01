@@ -34,46 +34,50 @@ impl Lexer {
 
     pub fn next_token(&mut self) -> Token {
         self.skip_space();
-        let tok = match self.ch {
-            '(' => Token::new_token(TokenType::LPAREN, self.ch.to_string()),
-            ')' => Token::new_token(TokenType::RPAREN, self.ch.to_string()),
-            '{' => Token::new_token(TokenType::LBRACE, self.ch.to_string()),
-            '}' => Token::new_token(TokenType::RBRACE, self.ch.to_string()),
-            ',' => Token::new_token(TokenType::COMMA, self.ch.to_string()),
-            '+' => Token::new_token(TokenType::PLUS, self.ch.to_string()),
-            '-' => Token::new_token(TokenType::MINUS, self.ch.to_string()),
-            '/' => Token::new_token(TokenType::SLASH, self.ch.to_string()),
-            '*' => Token::new_token(TokenType::ASTERISK, self.ch.to_string()),
-            '<' => Token::new_token(TokenType::LT, self.ch.to_string()),
-            '>' => Token::new_token(TokenType::GT, self.ch.to_string()),
-            ';' => Token::new_token(TokenType::SEMICOLON, self.ch.to_string()),
+        let mut tok: Token;
+        match self.ch {
+            '(' => tok = Token::new_token(TokenType::LPAREN, self.ch.to_string()),
+            ')' => tok = Token::new_token(TokenType::RPAREN, self.ch.to_string()),
+            '{' => tok = Token::new_token(TokenType::LBRACE, self.ch.to_string()),
+            '}' => tok = Token::new_token(TokenType::RBRACE, self.ch.to_string()),
+            ',' => tok = Token::new_token(TokenType::COMMA, self.ch.to_string()),
+            '+' => tok = Token::new_token(TokenType::PLUS, self.ch.to_string()),
+            '-' => tok = Token::new_token(TokenType::MINUS, self.ch.to_string()),
+            '/' => tok = Token::new_token(TokenType::SLASH, self.ch.to_string()),
+            '*' => tok = Token::new_token(TokenType::ASTERISK, self.ch.to_string()),
+            '<' => tok = Token::new_token(TokenType::LT, self.ch.to_string()),
+            '>' => tok = Token::new_token(TokenType::GT, self.ch.to_string()),
+            ';' => tok = Token::new_token(TokenType::SEMICOLON, self.ch.to_string()),
             '!' => {
                 if self.peek_char() == '=' {
                     self.read_char();
-                    Token::new_token(TokenType::NOTEQ, "!=".to_string())
+                    tok = Token::new_token(TokenType::NOTEQ, "!=".to_string())
                 } else {
-                    Token::new_token(TokenType::BANG, self.ch.to_string())
+                    tok = Token::new_token(TokenType::BANG, self.ch.to_string())
                 }
             }
             '=' => {
                 if self.peek_char() == '=' {
                     self.read_char();
-                    Token::new_token(TokenType::EQ, "==".to_string())
+                    tok = Token::new_token(TokenType::EQ, "==".to_string())
                 } else {
-                    Token::new_token(TokenType::ASSIGN, self.ch.to_string())
+                    tok = Token::new_token(TokenType::ASSIGN, self.ch.to_string())
                 }
             }
-            '\0' => Token::new_token(TokenType::EOF, self.ch.to_string()),
+            '\0' => tok = Token::new_token(TokenType::EOF, self.ch.to_string()),
             _ => {
-                if self.ch.is_alphabetic() {
+                if self.is_letter() {
                     let keyword = self.read_identifier();
                     let tok_type = self.keywords.check_ident(&keyword);
-                    Token::new_token(tok_type, keyword)
+                    tok = Token::new_token(tok_type, keyword);
+                    return tok
                 } else if self.ch.is_alphanumeric() {
                     let int = self.read_int();
-                    Token::new_token(TokenType::INT, int)
+                    tok = Token::new_token(TokenType::INT, int);
+                    return tok
                 } else {
-                    Token::new_token(TokenType::ILLEGAL, self.ch.to_string())
+                    tok  =Token::new_token(TokenType::ILLEGAL, self.ch.to_string());
+                    return tok
                 }
             }
         };
