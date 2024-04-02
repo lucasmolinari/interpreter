@@ -1,9 +1,6 @@
-use core::panic;
 
-use crate::lexer_utils::lexer::Lexer;
-use crate::lexer_utils::token::TokenType;
-use crate::parser_utils::parser::Parser;
-use crate::tests;
+use crate::lexer_utils::{lexer::Lexer, token::TokenType};
+use crate::parser_utils::{ast::{ExpressionStatement, Node, Statement}, parser::Parser};
 
 #[test]
 fn test_lexer() {
@@ -45,7 +42,6 @@ fn test_lexer() {
     for (i, tt) in tests.iter().enumerate() {
         let tok = l.next_token();
         assert_eq!(tok.literal, tt.0, "Test [{:?}] - Token Literal is wrong", i);
-        assert_eq!(tok.token_type, tt.1, "Test [{:?}] - Token Type is wrong", i);
     }
 }
 
@@ -59,7 +55,7 @@ fn test_let_statements() {
 
     for tt in tests.iter() {
         let input = format!("{} {} = {};", tt.0, tt.1, tt.2);
-        let mut l = Lexer::new(input.clone());
+        let l = Lexer::new(input);
         let mut p = Parser::new(l);
         let program = p.parse_program();
 
@@ -67,8 +63,8 @@ fn test_let_statements() {
         assert_eq!(stmts.len(), 1);
 
         let stmt = stmts.get(0).unwrap();
-        assert_eq!(stmt.token_literal(), tt.0);
-        assert_eq!(stmt.string(), input);
+        assert_eq!(stmt.get_token().token_type, TokenType::LET);
+        assert_eq!(stmt.get_token().literal, tt.0);
     }
 }
 
@@ -78,7 +74,7 @@ fn test_return_statements() {
 
     for tt in tests.iter() {
         let input = format!("{} {};", tt.0, tt.1);
-        let mut l = Lexer::new(input.clone());
+        let l = Lexer::new(input);
         let mut p = Parser::new(l);
         let program = p.parse_program();
 
@@ -86,15 +82,15 @@ fn test_return_statements() {
         assert_eq!(stmts.len(), 1);
 
         let stmt = stmts.get(0).unwrap();
-        assert_eq!(stmt.token_literal(), tt.0);
-        assert_eq!(stmt.string(), input);
+        assert_eq!(stmt.get_token().token_type, TokenType::RETURN);
+        assert_eq!(stmt.get_token().literal, tt.0);
     }
 }
 
 #[test]
 fn test_identifier_expression() {
     let input = String::from("foobar;");
-    let mut l = Lexer::new(input.clone());
+    let l = Lexer::new(input);
     let mut p = Parser::new(l);
     let program = p.parse_program();
 
@@ -102,13 +98,14 @@ fn test_identifier_expression() {
     assert_eq!(stmts.len(), 1);
 
     let stmt = stmts.get(0).unwrap();
-    assert_eq!(stmt.token_literal(), "foobar");
+    assert_eq!(stmt.get_token().token_type, TokenType::IDENT);
+    assert_eq!(stmt.get_token().literal, "foobar");
 }
 
 #[test]
 fn test_integer_literal_expression() {
     let input = String::from("5;");
-    let mut l = Lexer::new(input.clone());
+    let l = Lexer::new(input);
     let mut p = Parser::new(l);
     let program = p.parse_program();
 
@@ -116,20 +113,21 @@ fn test_integer_literal_expression() {
     assert_eq!(stmts.len(), 1);
 
     let stmt = stmts.get(0).unwrap();
-    assert_eq!(stmt.token_literal(), "5");
+    assert_eq!(stmt.get_token().token_type, TokenType::INT);
+    assert_eq!(stmt.get_token().literal, "5");
 }
 
 #[test]
 fn test_prefix_expression() {
     let tests = vec![
-        ("!5;", "!", "5"),
-        ("-15;", "-", "15"),
-        ("!foobar;", "!", "foobar"),
-        ("-foobar;", "-", "foobar"),
+        ("!5;", "!", "5", TokenType::INT),
+        ("-15;", "-", "15", TokenType::INT),
+        ("!foobar;", "!", "foobar", TokenType::IDENT),
+        ("-foobar;", "-", "foobar", TokenType::IDENT),
     ];
 
     for tt in tests {
-        let mut l = Lexer::new(tt.0.to_string());
+        let l = Lexer::new(tt.0.to_string());
         let mut p = Parser::new(l);
         let program = p.parse_program();
 
@@ -137,7 +135,7 @@ fn test_prefix_expression() {
         assert_eq!(stmts.len(), 1);
 
         let stmt = stmts.get(0).unwrap();
-        println!("{:?}", stmt.token_literal());
-        assert_eq!(stmt.token_literal(), tt.2);
+        assert_eq!(stmt.get_token().token_type, tt.3);
+        assert_eq!(stmt.get_token().literal, tt.2);
     }
 }

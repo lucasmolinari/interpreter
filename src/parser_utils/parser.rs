@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use crate::lexer_utils::lexer::*;
 use crate::lexer_utils::token::*;
 use crate::parser_utils::ast::Node;
-use crate::parser_utils::ast::PrefixExpression;
 use crate::parser_utils::ast::{
     Expression, Identifier, IntegerLiteral, LetStatement, Program, ReturnStatement,
 };
@@ -11,8 +10,8 @@ use crate::parser_utils::ast::{
 use super::ast::ExpressionStatement;
 use super::ast::Statement;
 
-type PrefixParse = fn(&mut Parser) -> Result<Box<dyn Expression>, ()>;
-type InfixParse = fn(&mut Parser, Box<dyn Expression>) -> Result<Box<dyn Expression>, ()>;
+type PrefixParse = fn(&mut Parser) -> Result<Expression, ()>;
+type InfixParse = fn(&mut Parser, Node) -> Result<Expression, ()>;
 
 #[derive(Debug)]
 pub struct Parser {
@@ -42,8 +41,6 @@ impl Parser {
     fn register_parsers(&mut self) {
         self.register_prefix(TokenType::IDENT, Self::parse_identifier);
         self.register_prefix(TokenType::INT, Self::parse_integer_literal);
-        self.register_prefix(TokenType::BANG, Self::parse_prefix_expression);
-        self.register_prefix(TokenType::MINUS, Self::parse_prefix_expression);
     }
     fn next_token(&mut self) {
         self.cur_token = self.peek_token.clone();
@@ -64,7 +61,7 @@ impl Parser {
         prg
     }
 
-    fn parse_statement(&mut self) -> Result<Box<dyn Statement>, ()> {
+    fn parse_statement(&mut self) -> Result<Node, ()> {
         match self.cur_token.token_type {
             TokenType::LET => self.parse_let_statement(),
             TokenType::RETURN => self.parse_return_statement(),
@@ -72,17 +69,17 @@ impl Parser {
         }
     }
 
-    fn parse_let_statement(&mut self) -> Result<Box<dyn Statement>, ()> {
+    fn parse_let_statement(&mut self) -> Result<Node, ()> {
         let token = self.cur_token.clone(); // This should be the LET token
         if self.expect_peek(TokenType::IDENT).is_err() {
             return Err(());
         }
 
         // This should be the variable name (Identifier)
-        let name = Box::new(Identifier {
+        let name = Identifier {
             token: self.cur_token.clone(),
             value: self.cur_token.literal.clone(),
-        });
+        };
 
         if self.expect_peek(TokenType::ASSIGN).is_err() {
             return Err(());
@@ -90,51 +87,54 @@ impl Parser {
 
         self.next_token();
 
-        let stmt = LetStatement {
+        let stmt = Node::Statement(Statement::LetStatement(LetStatement {
             token: token,
             name: name,
             value: self.cur_token.literal.clone(),
-        };
+        }));
 
         self.next_token();
         while !self.cur_token_is(TokenType::SEMICOLON) {
             self.next_token()
         }
-        println!("LetStatement: {}", stmt.string());
-        Ok(Box::new(stmt))
+        println!("LetStatement");
+        Ok(stmt)
     }
 
-    fn parse_return_statement(&mut self) -> Result<Box<dyn Statement>, ()> {
+    fn parse_return_statement(&mut self) -> Result<Node, ()> {
         let token = self.cur_token.clone();
         self.next_token();
-        let stmt = ReturnStatement {
+
+        let stmt = Node::Statement(Statement::ReturnStatement(ReturnStatement {
             token: token,
             return_value: self.cur_token.literal.clone(),
-        };
+        }));
+
         while !self.cur_token_is(TokenType::SEMICOLON) {
             self.next_token()
         }
-        println!("ReturnStatement: {}", stmt.string());
-        Ok(Box::new(stmt))
+        println!("ReturnStatement");
+        Ok(stmt)
     }
 
-    fn parse_expression_statement(&mut self) -> Result<Box<dyn Statement>, ()> {
+    fn parse_expression_statement(&mut self) -> Result<Node, ()> {
         let expression = match self.parse_expression(Precedence::LOWEST) {
-            Ok(expr) => expr,
+            Ok(expr) => Box::new(expr),
             Err(()) => return Err(()),
         };
 
-        let stmt = ExpressionStatement {
+        let stmt = Node::Statement(Statement::ExpressionStatement(ExpressionStatement {
             token: self.cur_token.clone(),
             expression: expression,
-        };
+        }));
+
         if self.peek_token_is(TokenType::SEMICOLON) {
             self.next_token()
         }
-        Ok(Box::new(stmt))
+        Ok(stmt)
     }
 
-    fn parse_expression(&mut self, precedence: Precedence) -> Result<Box<dyn Expression>, ()> {
+    fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, ()> {
         let prefix = self.prefix_parse.get(&self.cur_token.token_type);
         match prefix {
             Some(prefix_fn) => prefix_fn(self),
@@ -142,41 +142,25 @@ impl Parser {
         }
     }
 
-    pub fn parse_identifier(&mut self) -> Result<Box<dyn Expression>, ()> {
-        Ok(Box::new(Identifier {
+    pub fn parse_identifier(&mut self) -> Result<Expression, ()> {
+        Ok(Expression::Identifier(Identifier {
             token: self.cur_token.clone(),
             value: self.cur_token.literal.clone(),
         }))
     }
 
-    pub fn parse_integer_literal(&mut self) -> Result<Box<dyn Expression>, ()> {
+    pub fn parse_integer_literal(&mut self) -> Result<Expression, ()> {
         let converted = self.cur_token.literal.parse::<i64>();
         match converted {
-            Ok(n) => {
-                Ok(Box::new(IntegerLiteral {
-                    token: self.cur_token.clone(),
-                    value: n,
-                }))
-            }
+            Ok(n) => Ok(Expression::IntegerLiteral(IntegerLiteral {
+                token: self.cur_token.clone(),
+                value: n,
+            })),
             Err(_) => {
                 let e = format!("Could not parse {} as integer", self.cur_token.literal);
                 self.errors.push(e);
                 Err(())
             }
-        }
-    }
-
-    pub fn parse_prefix_expression(&mut self) -> Result<Box<dyn Expression>, ()> {
-        let token = self.cur_token.clone();
-        let literal = self.cur_token.literal.clone();
-        self.next_token();
-        match self.parse_expression(Precedence::PREFIX) {
-            Ok(right) => Ok(Box::new(PrefixExpression {
-                token: token,
-                operator: literal,
-                right: right,
-            })),
-            Err(_) => Err(()),
         }
     }
 

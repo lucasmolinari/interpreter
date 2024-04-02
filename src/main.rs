@@ -1,4 +1,4 @@
-#![allow(unused)]
+// #![allow(unused)]
 
 mod tests;
 mod lexer_utils;
@@ -10,5 +10,5 @@ use parser_utils::parser::Parser;
 use lexer_utils::repl;
     
 fn main() {
-    repl::start();
+    // repl::start();
 }
