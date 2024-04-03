@@ -17,55 +17,28 @@ impl Node {
         }
     }
 
-    pub fn is_stmt(&self) -> bool {
+    pub fn get_expression(&self) -> &Expression {
         match self {
-            Node::Statement(_) => true,
-            _ => false,
+            Node::Expression(expr) => expr,
+            _ => panic!("Not an expression"),
         }
     }
 
-    pub fn is_expr(&self) -> bool {
+    pub fn get_statement(&self) -> &Statement {
         match self {
-            Node::Expression(_) => true,
-            _ => false,
+            Node::Statement(stmt) => stmt,
+            _ => panic!("Not a statement"),
         }
     }
 
-    pub fn is_return_stmt(&self) -> bool {
+    pub fn get_statement_expr(&self) -> &ExpressionStatement {
         match self {
-            Node::Statement(Statement::ReturnStatement(_)) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_let_stmt(&self) -> bool {
-        match self {
-            Node::Statement(Statement::LetStatement(_)) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_identifier(&self) -> bool {
-        match self {
-            Node::Expression(Expression::Identifier(_)) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_integer_literal(&self) -> bool {
-        match self {
-            Node::Expression(Expression::IntegerLiteral(_)) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_prefix_expr(&self) -> bool {
-        match self {
-            Node::Expression(Expression::PrefixExpression(_)) => true,
-            _ => false,
+            Node::Statement(Statement::ExpressionStatement(expr)) => expr,
+            _ => panic!("Not an expression statement"),
         }
     }
 }
+
 #[derive(Debug, PartialEq)]
 pub enum Statement {
     LetStatement(LetStatement),
@@ -97,16 +70,39 @@ impl Expression {
             Expression::InfixExpression(expr) => &expr.token,
         }
     }
+    pub fn get_identifer(&self) -> &Identifier {
+        match self {
+            Expression::Identifier(expr) => expr,
+            _ => panic!("Not an identifier"),
+        }
+    }
+    pub fn get_integer_literal(&self) -> &IntegerLiteral {
+        match self {
+            Expression::IntegerLiteral(expr) => expr,
+            _ => panic!("Not an integer literal"),
+        }
+    }
+    pub fn get_prefix_expr(&self) -> &PrefixExpression {
+        match self {
+            Expression::PrefixExpression(expr) => expr,
+            _ => panic!("Not a prefix expression"),
+        }
+    }
+    pub fn get_infix_expr(&self) -> &InfixExpression {
+        match self {
+            Expression::InfixExpression(expr) => expr,
+            _ => panic!("Not an infix expression"),
+        }
+    }
 }
-#[derive(Debug, PartialEq)]
 
+#[derive(Debug, PartialEq)]
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
     pub value: String,
 }
 #[derive(Debug, PartialEq)]
-
 pub struct ReturnStatement {
     pub token: Token,
     pub return_value: String,
@@ -134,7 +130,6 @@ pub struct PrefixExpression {
     pub operator: String,
     pub right: Box<Expression>,
 }
-
 #[derive(Debug, PartialEq)]
 pub struct InfixExpression {
     pub token: Token,

@@ -100,6 +100,9 @@ fn test_identifier_expression() {
     let stmt = stmts.get(0).unwrap();
     assert_eq!(stmt.get_token().token_type, TokenType::IDENT);
     assert_eq!(stmt.get_token().literal, "foobar");
+
+    let expr = &stmt.get_statement_expr().expression;
+    assert_eq!(expr.get_identifer().value, "foobar");
 }
 
 #[test]
@@ -115,15 +118,18 @@ fn test_integer_literal_expression() {
     let stmt = stmts.get(0).unwrap();
     assert_eq!(stmt.get_token().token_type, TokenType::INT);
     assert_eq!(stmt.get_token().literal, "5");
+
+    let expr = &stmt.get_statement_expr().expression;
+    assert_eq!(expr.get_integer_literal().value, 5);
 }
 
 #[test]
 fn test_prefix_expression() {
     let tests = vec![
-        ("!5;", "!", "5", TokenType::INT),
-        ("-15;", "-", "15", TokenType::INT),
-        ("!foobar;", "!", "foobar", TokenType::IDENT),
-        ("-foobar;", "-", "foobar", TokenType::IDENT),
+        ("!5;", "!", "5", TokenType::INT, TokenType::BANG),
+        ("-15;", "-", "15", TokenType::INT, TokenType::MINUS),
+        ("!foobar;", "!", "foobar", TokenType::IDENT, TokenType::BANG),
+        ("-foobar;", "-", "foobar", TokenType::IDENT, TokenType::MINUS),
     ];
 
     for tt in tests {
@@ -137,5 +143,17 @@ fn test_prefix_expression() {
         let stmt = stmts.get(0).unwrap();
         assert_eq!(stmt.get_token().token_type, tt.3);
         assert_eq!(stmt.get_token().literal, tt.2);
+
+        let prefix_expr = &stmt.get_statement_expr().expression.get_prefix_expr();
+        assert_eq!(prefix_expr.token.literal, tt.1);
+        assert_eq!(prefix_expr.token.token_type, tt.4);
+        assert_eq!(prefix_expr.operator, tt.1);
+
+        let right = &prefix_expr.right;
+        if tt.3 == TokenType::INT {
+            assert_eq!(right.get_integer_literal().value, tt.2.parse::<i64>().unwrap());
+        } else {
+            assert_eq!(right.get_identifer().value, tt.2);
+        }
     }
 }

@@ -8,6 +8,7 @@ use crate::parser_utils::ast::{
 };
 
 use super::ast::ExpressionStatement;
+use super::ast::PrefixExpression;
 use super::ast::Statement;
 
 type PrefixParse = fn(&mut Parser) -> Result<Expression, ()>;
@@ -41,6 +42,8 @@ impl Parser {
     fn register_parsers(&mut self) {
         self.register_prefix(TokenType::IDENT, Self::parse_identifier);
         self.register_prefix(TokenType::INT, Self::parse_integer_literal);
+        self.register_prefix(TokenType::BANG, Self::parse_prefix_expression);
+        self.register_prefix(TokenType::MINUS, Self::parse_prefix_expression);
     }
     fn next_token(&mut self) {
         self.cur_token = self.peek_token.clone();
@@ -140,6 +143,22 @@ impl Parser {
             Some(prefix_fn) => prefix_fn(self),
             None => Err(()),
         }
+    }
+
+    fn parse_prefix_expression(&mut self) -> Result<Expression, ()> {
+        let token = self.cur_token.clone();
+        let operator = self.cur_token.literal.clone();
+        self.next_token();
+        let right = match self.parse_expression(Precedence::PREFIX) {
+            Ok(expr) => expr,
+            Err(()) => return Err(()),
+        };
+        
+        Ok(Expression::PrefixExpression(PrefixExpression {
+            token: token,
+            operator: operator,
+            right: Box::new(right),
+        }))
     }
 
     pub fn parse_identifier(&mut self) -> Result<Expression, ()> {
