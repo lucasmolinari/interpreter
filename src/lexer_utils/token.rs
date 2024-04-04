@@ -48,24 +48,25 @@ pub struct Keywords {
     pub map: HashMap<&'static str, TokenType>,
 }
 impl Keywords {
+    pub fn new() -> Keywords {
+        let map = HashMap::from([
+            ("fn", TokenType::FUNCTION),
+            ("let", TokenType::LET),
+            ("true", TokenType::TRUE),
+            ("false", TokenType::FALSE),
+            ("if", TokenType::IF),
+            ("else", TokenType::ELSE),
+            ("return", TokenType::RETURN),
+        ]
+        );
+        
+        Keywords { map }
+    }
+
     pub fn check_ident(&self, keyword: &str) -> TokenType {
         match self.map.get(keyword) {
             Some(k_word) => k_word.clone(),
             None => TokenType::IDENT.clone(),
         }
-    }
-}
-impl Default for Keywords {
-    fn default() -> Self {
-        let mut map = HashMap::new();
-        map.insert("fn", TokenType::FUNCTION);
-        map.insert("let", TokenType::LET);
-        map.insert("true", TokenType::TRUE);
-        map.insert("false", TokenType::FALSE);
-        map.insert("if", TokenType::IF);
-        map.insert("else", TokenType::ELSE);
-        map.insert("return", TokenType::RETURN);
-
-        Keywords { map }
     }
 }

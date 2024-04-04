@@ -13,7 +13,7 @@ impl Lexer {
     pub fn new(input: String) -> Lexer {
         let mut l = Lexer {
             input: input,
-            keywords: Keywords::default(),
+            keywords: Keywords::new(),
             position: 0,
             read_position: 0,
             ch: '\0',
