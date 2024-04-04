@@ -11,11 +11,9 @@ use lexer_utils::repl;
     
 fn main() {
     // repl::start();
-    let input = String::from("12 * 43;");
+    let input = String::from("3 + 4; -5 * 5;");
     let mut l = Lexer::new(input);
     let mut p = Parser::new(l);
     let program = p.parse_program();
-    for (i, stmt) in program.statements.iter().enumerate() {
-        println!("{} STATEMENT: {:?}", i, stmt); 
-    }
+    println!("{:?}", program.string())
 }

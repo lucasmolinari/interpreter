@@ -94,6 +94,15 @@ impl Expression {
             _ => panic!("Not an infix expression"),
         }
     }
+
+    pub fn string(&self) -> String {
+        match self {
+            Expression::Identifier(expr) => expr.value.clone(),
+            Expression::IntegerLiteral(expr) => expr.value.to_string(),
+            Expression::PrefixExpression(expr) => expr.string(),
+            Expression::InfixExpression(expr) => expr.precedence(),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -126,9 +135,14 @@ pub struct IntegerLiteral {
 }
 #[derive(Debug, PartialEq, Clone)]
 pub struct PrefixExpression {
-    pub token: Token,
+    pub token: Token, // Token for the operator
     pub operator: String,
     pub right: Box<Expression>,
+}
+impl PrefixExpression {
+    pub fn string(&self) -> String {
+        format!("({}{})", self.operator, self.right.string())
+    }
 }
 #[derive(Debug, PartialEq, Clone)]
 pub struct InfixExpression {
@@ -137,6 +151,22 @@ pub struct InfixExpression {
     pub operator: String,
     pub right: Box<Expression>,
 }
+impl InfixExpression {
+    pub fn precedence(&self) -> String {
+        format!("({} {} {})", self.left.string(), self.operator, self.right.string())
+    }
+}
+
 pub struct Program {
     pub statements: Vec<Node>,
+}
+impl Program {
+    pub fn string(&self) -> String {
+        let mut program = String::new();
+        let mut string = String::new();
+        for stmt in &self.statements {
+            string.push_str(&stmt.get_statement_expr().expression.string());
+        }
+        string
+    }
 }

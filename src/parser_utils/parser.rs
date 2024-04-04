@@ -190,8 +190,7 @@ impl Parser {
 
     fn parse_prefix_expression(&mut self) -> Result<Expression, String> {
         let token = self.cur_token.clone();
-        let operator = self.peek_token.literal.clone();
-
+        let operator = self.cur_token.literal.clone();
         self.next_token();
         
         let right = match self.parse_expression(Precedence::PREFIX) {
