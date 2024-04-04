@@ -34,7 +34,7 @@ impl Node {
     pub fn get_statement_expr(&self) -> &ExpressionStatement {
         match self {
             Node::Statement(Statement::ExpressionStatement(expr)) => expr,
-            _ => panic!("Not an expression statement"),
+            _ => panic!("{:?} is not an expression statement", self),
         }
     }
 }
@@ -51,6 +51,14 @@ impl Statement {
             Statement::LetStatement(stmt) => &stmt.token,
             Statement::ReturnStatement(stmt) => &stmt.token,
             Statement::ExpressionStatement(stmt) => &stmt.token,
+        }
+    }
+
+    pub fn string(&self) -> String {
+        match self {
+            Statement::LetStatement(stmt) => stmt.string(),
+            Statement::ReturnStatement(stmt) => stmt.string(),
+            Statement::ExpressionStatement(stmt) => stmt.string(),
         }
     }
 }
@@ -111,15 +119,30 @@ pub struct LetStatement {
     pub name: Identifier,
     pub value: String,
 }
+impl LetStatement {
+    pub fn string(&self) -> String {
+        format!("{} = {};", self.name.value, self.value)
+    }
+}
 #[derive(Debug, PartialEq)]
 pub struct ReturnStatement {
     pub token: Token,
     pub return_value: String,
 }
+impl ReturnStatement {
+    pub fn string(&self) -> String {
+        format!("return {};", self.return_value)
+    }
+}
 #[derive(Debug, PartialEq)]
 pub struct ExpressionStatement {
     pub token: Token,
     pub expression: Box<Expression>,
+}
+impl ExpressionStatement {
+    pub fn string(&self) -> String {
+        self.expression.string()
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -153,7 +176,12 @@ pub struct InfixExpression {
 }
 impl InfixExpression {
     pub fn precedence(&self) -> String {
-        format!("({} {} {})", self.left.string(), self.operator, self.right.string())
+        format!(
+            "({} {} {})",
+            self.left.string(),
+            self.operator,
+            self.right.string()
+        )
     }
 }
 
@@ -165,7 +193,11 @@ impl Program {
         let mut program = String::new();
         let mut string = String::new();
         for stmt in &self.statements {
-            string.push_str(&stmt.get_statement_expr().expression.string());
+            match stmt {
+                Node::Statement(stmt) => string.push_str(&stmt.string()),
+                Node::Expression(expr) => string.push_str(&expr.string()),
+            }
+            // string.push_str(&stmt.get_statement_expr().expression.string());
         }
         string
     }
