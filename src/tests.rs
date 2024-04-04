@@ -1,5 +1,6 @@
 
 use crate::lexer_utils::{lexer::Lexer, token::TokenType};
+use crate::parser_utils::ast::Program;
 use crate::parser_utils::{ast::{ExpressionStatement, Node, Statement}, parser::Parser};
 
 #[test]
@@ -155,5 +156,41 @@ fn test_prefix_expression() {
         } else {
             assert_eq!(right.get_identifer().value, tt.2);
         }
+    }
+}
+
+fn test_infix_expression(){
+    let tests = vec![
+        ("5 + 5;", 5, "+", 5),
+        ("5 - 5;", 5, "-", 5),
+        ("5 * 5;", 5, "*", 5),
+        ("5 / 5;", 5, "/", 5),
+        ("5 > 5;", 5, ">", 5),
+        ("5 < 5;", 5, "<", 5),
+        ("5 == 5;", 5, "==", 5),
+        ("5 != 5;", 5, "!=", 5),
+    ];
+
+    
+    for tt in tests {
+        let l = Lexer::new(tt.0.to_string());
+        let mut p = Parser::new(l);
+        let program = p.parse_program();
+    
+        let stmts = program.statements;
+        assert_eq!(stmts.len(), 1);
+    
+        let stmt =  stmts.get(0).unwrap();
+
+        let infix_expr = stmt.get_statement_expr().expression.get_infix_expr();
+        
+        let left = &infix_expr.left;
+        assert_eq!(left.get_integer_literal().value, tt.1);
+
+        let right = &infix_expr.right;
+        assert_eq!(right.get_integer_literal().value, tt.3);
+
+        let operator = &infix_expr.operator;
+        assert_eq!(operator, tt.2);
     }
 }

@@ -11,11 +11,11 @@ use lexer_utils::repl;
     
 fn main() {
     // repl::start();
-    let input = String::from("!5;");
+    let input = String::from("12 * 43;");
     let mut l = Lexer::new(input);
     let mut p = Parser::new(l);
     let program = p.parse_program();
-    let stmt = program.statements.get(0).unwrap();
-    let expr = &stmt.get_statement_expr().expression;
-    println!("{:?}", expr.get_prefix_expr());
+    for (i, stmt) in program.statements.iter().enumerate() {
+        println!("{} STATEMENT: {:?}", i, stmt); 
+    }
 }

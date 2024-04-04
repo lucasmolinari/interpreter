@@ -54,7 +54,7 @@ impl Statement {
         }
     }
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     Identifier(Identifier),
     IntegerLiteral(IntegerLiteral),
@@ -113,26 +113,26 @@ pub struct ExpressionStatement {
     pub expression: Box<Expression>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Identifier {
     pub token: Token,
     pub value: String,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct IntegerLiteral {
     pub token: Token,
     pub value: i64,
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct PrefixExpression {
     pub token: Token,
     pub operator: String,
     pub right: Box<Expression>,
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct InfixExpression {
-    pub token: Token,
+    pub token: Token, // Token for the operator
     pub left: Box<Expression>,
     pub operator: String,
     pub right: Box<Expression>,
