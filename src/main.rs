@@ -1,19 +1,22 @@
 #![allow(unused)]
 
-mod tests;
 mod lexer_utils;
 mod parser_utils;
-
+mod tests;
 
 use lexer_utils::lexer::Lexer;
-use parser_utils::parser::Parser;
 use lexer_utils::repl;
-    
+use parser_utils::parser::Parser;
+
+use std::fs;
+
 fn main() {
     // repl::start();
-    let input = String::from("3 + 4; -5 * 5;");
-    let mut l = Lexer::new(input);
+    let input = fs::read_to_string("./ex.crb");
+    let mut l = Lexer::new(input.unwrap());
     let mut p = Parser::new(l);
     let program = p.parse_program();
-    println!("{:?}", program.string())
+    for (i, stmt) in program.statements.iter().enumerate() {
+        println!("{} {:?}", i, stmt);
+    }
 }
