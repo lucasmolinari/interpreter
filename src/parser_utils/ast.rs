@@ -103,6 +103,20 @@ impl Expression {
         }
     }
 
+    pub fn is_integer_literal(&self) -> bool {
+        match self {
+            Expression::IntegerLiteral(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_identifier(&self) -> bool {
+        match self {
+            Expression::Identifier(_) => true,
+            _ => false,
+        }
+    }
+
     pub fn string(&self) -> String {
         match self {
             Expression::Identifier(expr) => expr.value.clone(),

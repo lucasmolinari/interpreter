@@ -152,10 +152,15 @@ impl Parser {
 
     fn parse_expression_statement(&mut self) -> Result<Node, String> {
         let token = self.cur_token.clone();
-        
+
         let expression = match self.parse_expression(Precedence::LOWEST) {
             Ok(expr) => Box::new(expr),
-            Err(err) => return Err(format!("Could not parse expression, received error: {}", err)),
+            Err(err) => {
+                return Err(format!(
+                    "Could not parse expression, received error: {}",
+                    err
+                ))
+            }
         };
 
         let stmt = Node::Statement(Statement::ExpressionStatement(ExpressionStatement {
@@ -171,11 +176,15 @@ impl Parser {
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, String> {
         let prefix = self.prefix_parse.get(&self.cur_token.token_type);
-        
-        // 1 = Expression Integer Literal 5
+
         let mut left = match prefix {
             Some(prefix_fn) => prefix_fn(self),
-            None => return Err(format!("No prefix parse function for {:?}", self.cur_token.token_type)),
+            None => {
+                return Err(format!(
+                    "No prefix parse function for {:?}",
+                    self.cur_token.token_type
+                ))
+            }
         };
 
         while !self.peek_token_is(TokenType::SEMICOLON) && &precedence < self.peek_precedence() {
@@ -192,10 +201,15 @@ impl Parser {
         let token = self.cur_token.clone();
         let operator = self.cur_token.literal.clone();
         self.next_token();
-        
+
         let right = match self.parse_expression(Precedence::PREFIX) {
             Ok(expr) => expr,
-            Err(err) => return Err(format!("Could not parse right expression in prefix, received error: {}", err)),
+            Err(err) => {
+                return Err(format!(
+                    "Could not parse right expression in prefix, received error: {}",
+                    err
+                ))
+            }
         };
 
         Ok(Expression::PrefixExpression(PrefixExpression {
@@ -213,15 +227,17 @@ impl Parser {
         let precedence = self.cur_precedence();
 
         self.next_token();
-        
-        let right = match self.parse_expression(    precedence) {
+
+        let right = match self.parse_expression(precedence) {
             Ok(expr) => expr,
             Err(err) => {
-                println!("Error: {:?}", err);
-                return Err(format!("Could not parse right expression in infix, received error: {}", err))
+                return Err(format!(
+                    "Could not parse right expression in infix, received error: {}",
+                    err
+                ));
             }
         };
-     
+
         Ok(Expression::InfixExpression(InfixExpression {
             token: token,
             operator: operator,
