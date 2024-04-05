@@ -69,6 +69,7 @@ impl Parser {
         self.register_prefix(TokenType::MINUS, Self::parse_prefix_expression);
         self.register_prefix(TokenType::TRUE, Self::parse_boolean);
         self.register_prefix(TokenType::FALSE, Self::parse_boolean);
+        self.register_prefix(TokenType::LPAREN, Self::parse_grouped_expression);
 
         self.register_infix(TokenType::PLUS, Self::parse_infix_expression);
         self.register_infix(TokenType::MINUS, Self::parse_infix_expression);
@@ -246,6 +247,16 @@ impl Parser {
             left: Box::new(left),
             right: Box::new(right),
         }))
+    }
+
+    pub fn parse_grouped_expression(&mut self) -> Result<Expression, String> {
+        self.next_token();
+        let expr = self.parse_expression(Precedence::LOWEST);
+        println!("{:?}", expr);
+        match self.expect_peek(TokenType::RPAREN) {
+            Ok(_) => expr,
+            Err(_) => Err("Expected closing parenthesis".to_string())
+        }
     }
 
     pub fn parse_identifier(&mut self) -> Result<Expression, String> {

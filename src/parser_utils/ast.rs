@@ -232,7 +232,6 @@ impl Program {
                 Node::Statement(stmt) => string.push_str(&stmt.string()),
                 Node::Expression(expr) => string.push_str(&expr.string()),
             }
-            // string.push_str(&stmt.get_statement_expr().expression.string());
         }
         string
     }

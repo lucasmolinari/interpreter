@@ -64,21 +64,23 @@ fn test_let_statements() {
 
     for tt in tests.iter() {
         let input = format!("{} {} = {};", tt.0, tt.1, tt.2);
-        let program = init_program(input);
+        let program = init_program(input.clone());
 
         let stmts = program.statements;
-        assert_eq!(stmts.len(), 1, "Statement length is wrong");
+        assert_eq!(stmts.len(), 1, "Test [{}] Statement length is wrong", input);
 
         let stmt = stmts.get(0).unwrap();
         assert_eq!(
             stmt.get_token().token_type,
             TokenType::LET,
-            "Statement Token Type is wrong"
+            "Test [{}] Statement Token Type is wrong",
+            input
         );
         assert_eq!(
             stmt.get_token().literal,
             tt.0,
-            "Statement Token Literal is wrong"
+            "Test [{}] Statement Token Literal is wrong",
+            input
         );
     }
 }
@@ -89,21 +91,23 @@ fn test_return_statements() {
 
     for tt in tests.iter() {
         let input = format!("{} {};", tt.0, tt.1);
-        let program = init_program(input);
+        let program = init_program(input.clone());
 
         let stmts = program.statements;
-        assert_eq!(stmts.len(), 1, "Statement length is wrong");
+        assert_eq!(stmts.len(), 1, "Test [{}] Statement length is wrong", input);
 
         let stmt = stmts.get(0).unwrap();
         assert_eq!(
             stmt.get_token().token_type,
             TokenType::RETURN,
-            "Statement Token Type is wrong"
+            "Test [{}] Statement Token Type is wrong",
+            input
         );
         assert_eq!(
             stmt.get_token().literal,
             tt.0,
-            "Statement Token Literal is wrong"
+            "Test [{}] Statement Token Literal is wrong",
+            input
         );
     }
 }
@@ -191,10 +195,11 @@ fn test_boolean_expresion() {
     ];
 
     for tt in tests {
-        let p = init_program(tt.input);
+        let input = tt.input;
+        let p = init_program(input.clone());
 
         let stmts = p.statements;
-        assert_eq!(stmts.len(), 1, "Statement length is wrong");
+        assert_eq!(stmts.len(), 1, "Test [{}] Statement length is wrong", input);
 
         let stmt = stmts.get(0).unwrap();
         let boolean = stmt
@@ -202,15 +207,17 @@ fn test_boolean_expresion() {
             .expression
             .get_boolean_expression();
 
-        assert_eq!(boolean.value, tt.value, "Boolean Value is wrong");
+        assert_eq!(boolean.value, tt.value, "Test [{}] Boolean Value is wrong", input);
         assert_eq!(
             boolean.token.token_type, tt.token_type,
-            "Boolean Token Type is wrong"
+            "Test [{}] Boolean Token Type is wrong",
+            input
         );
         assert_eq!(
             boolean.token.literal,
             tt.value.to_string(),
-            "Boolean Token Literal is wrong"
+            "Test [{}] Boolean Token Literal is wrong",
+            input
         );
     }
 }
@@ -270,42 +277,49 @@ fn test_prefix_expression() {
     ];
 
     for tt in tests {
-        let program = init_program(tt.input);
+        let input = tt.input;
+        let program = init_program(input.clone());
 
         let stmts = program.statements;
-        assert_eq!(stmts.len(), 1, "Statement length is wrong");
+        assert_eq!(stmts.len(), 1, "Test [{}] Statement length is wrong", input);
 
         let stmt = stmts.get(0).unwrap();
         assert_eq!(
             stmt.get_token().token_type,
             tt.operator_token,
-            "Expression Statement Token Type is wrong"
+            "Test [{}] Expression Statement Token Type is wrong",
+            input
         );
         assert_eq!(
             stmt.get_token().literal,
             tt.operator,
-            "Expression Statement Literal is wrong"
+            "Test [{}] Expression Statement Literal is wrong",
+            input
         );
 
         let prefix_expr = &stmt.get_statement_expr().expression.get_prefix_expr();
         assert_eq!(
             prefix_expr.token.token_type, tt.operator_token,
-            "Prefix Expression Token Type is wrong"
+            "Test [{}] Prefix Expression Token Type is wrong",
+            input
         );
         assert_eq!(
             prefix_expr.token.literal, tt.operator,
-            "Prefix Expression Token Literal is wrong"
+            "Test [{}] Prefix Expression Token Literal is wrong",
+            input
         );
         assert_eq!(
             prefix_expr.operator, tt.operator,
-            "Prefix Expression Operator is wrong"
+            "Test [{}] Prefix Expression Operator is wrong",
+            input
         );
 
         test_literal_expression(&prefix_expr.right, &tt.right);
         assert_eq!(
             prefix_expr.string(),
             format!("({}{})", tt.operator, tt.right),
-            "Prefix Expression String is wrong"
+            "Test [{}] Prefix Expression String is wrong",
+            input
         );
     }
 }
@@ -424,21 +438,24 @@ fn test_infix_expression() {
     ];
 
     for tt in tests {
-        let program = init_program(tt.input);
+        let input = tt.input;
+        let program = init_program(input.clone());
 
         let stmts = program.statements;
-        assert_eq!(stmts.len(), 1, "Statement length is wrong");
+        assert_eq!(stmts.len(), 1, "Test [{}] Statement length is wrong", input);
 
         let stmt = stmts.get(0).unwrap();
         assert_eq!(
             stmt.get_token().token_type,
             tt.left_token,
-            "Expression Statement Token Type is wrong"
+            "Test [{}] Expression Statement Token Type is wrong",
+            input
         );
         assert_eq!(
             stmt.get_token().literal,
             tt.left,
-            "Expression Statement Literal is wrong"
+            "Test [{}] Expression Statement Literal is wrong",
+            input
         );
 
         let infix_expr = stmt.get_statement_expr().expression.get_infix_expr();
@@ -520,13 +537,34 @@ fn test_operator_precedence() {
             input: "3 > 5 == false;".to_string(),
             expected: "((3 > 5) == false)".to_string(),
         },
+        PrecedenceTest {
+            input: "1 + (2 + 3) + 4;".to_string(),
+            expected: "((1 + (2 + 3)) + 4)".to_string(),
+        },
+        PrecedenceTest {
+            input: "(5 + 5) * 2;".to_string(),
+            expected: "((5 + 5) * 2)".to_string(),
+        },
+        PrecedenceTest {
+            input: "2 / (5 + 5);".to_string(),
+            expected: "(2 / (5 + 5))".to_string(),
+        },
+        PrecedenceTest {
+            input: "-(5 + 5);".to_string(),
+            expected: "(-(5 + 5))".to_string(),
+        },
+        PrecedenceTest {
+            input: "!(true == true);".to_string(),
+            expected: "(!(true == true))".to_string(),
+        },
     ];
 
     for tt in tests {
-        let program = init_program(tt.input);
+        let input = tt.input;
+        let program = init_program(input.clone());
+        
         let string = program.string();
-
-        assert_eq!(string, tt.expected, "Expression String is wrong");
+        assert_eq!(string, tt.expected, "Test [{}] Expression String is wrong", input);
     }
 }
 
