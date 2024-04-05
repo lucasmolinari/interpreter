@@ -5,8 +5,8 @@ use crate::lexer_utils::lexer::*;
 use crate::lexer_utils::token;
 use crate::lexer_utils::token::*;
 use crate::parser_utils::ast::{
-    Expression, ExpressionStatement, Identifier, InfixExpression, IntegerLiteral, LetStatement,
-    Node, PrefixExpression, Program, ReturnStatement, Statement,
+    BooleanExpression, Expression, ExpressionStatement, Identifier, InfixExpression,
+    IntegerLiteral, LetStatement, Node, PrefixExpression, Program, ReturnStatement, Statement,
 };
 
 type PrefixParse = fn(&mut Parser) -> Result<Expression, String>;
@@ -67,6 +67,8 @@ impl Parser {
         self.register_prefix(TokenType::INT, Self::parse_integer_literal);
         self.register_prefix(TokenType::BANG, Self::parse_prefix_expression);
         self.register_prefix(TokenType::MINUS, Self::parse_prefix_expression);
+        self.register_prefix(TokenType::TRUE, Self::parse_boolean);
+        self.register_prefix(TokenType::FALSE, Self::parse_boolean);
 
         self.register_infix(TokenType::PLUS, Self::parse_infix_expression);
         self.register_infix(TokenType::MINUS, Self::parse_infix_expression);
@@ -266,6 +268,13 @@ impl Parser {
                 Err(e)
             }
         }
+    }
+
+    pub fn parse_boolean(&mut self) -> Result<Expression, String> {
+        Ok(Expression::BooleanExpression(BooleanExpression {
+            token: self.cur_token.clone(),
+            value: self.cur_token_is(TokenType::TRUE),
+        }))
     }
 
     fn register_prefix(&mut self, t: TokenType, fn_ptr: PrefixParse) {

@@ -68,6 +68,7 @@ pub enum Expression {
     IntegerLiteral(IntegerLiteral),
     PrefixExpression(PrefixExpression),
     InfixExpression(InfixExpression),
+    BooleanExpression(BooleanExpression)
 }
 impl Expression {
     fn token(&self) -> &Token {
@@ -76,6 +77,7 @@ impl Expression {
             Expression::IntegerLiteral(expr) => &expr.token,
             Expression::PrefixExpression(expr) => &expr.token,
             Expression::InfixExpression(expr) => &expr.token,
+            Expression::BooleanExpression(expr) => &expr.token,
         }
     }
     pub fn get_identifer(&self) -> &Identifier {
@@ -103,6 +105,13 @@ impl Expression {
         }
     }
 
+    pub fn get_boolean_expression(&self) -> &BooleanExpression {
+        match self {
+            Expression::BooleanExpression(expr) => expr,
+            _ => panic!("Not a boolean expression"),
+        }
+    }
+
     pub fn is_integer_literal(&self) -> bool {
         match self {
             Expression::IntegerLiteral(_) => true,
@@ -123,6 +132,7 @@ impl Expression {
             Expression::IntegerLiteral(expr) => expr.value.to_string(),
             Expression::PrefixExpression(expr) => expr.string(),
             Expression::InfixExpression(expr) => expr.precedence(),
+            Expression::BooleanExpression(expr) => expr.string(),
         }
     }
 }
@@ -196,6 +206,17 @@ impl InfixExpression {
             self.operator,
             self.right.string()
         )
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct BooleanExpression {
+    pub token: Token,
+    pub value: bool,
+}
+impl BooleanExpression {
+    fn string(&self) -> String {
+        self.value.to_string()
     }
 }
 

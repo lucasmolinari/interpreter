@@ -5,7 +5,6 @@ use crate::parser_utils::{
     parser::Parser,
 };
 
-
 fn init_program(input: String) -> Program {
     let l = Lexer::new(input);
     let mut p = Parser::new(l);
@@ -172,6 +171,51 @@ fn test_integer_literal_expression() {
 }
 
 #[test]
+fn test_boolean_expresion() {
+    struct BooleanTest {
+        input: String,
+        value: bool,
+        token_type: TokenType,
+    }
+    let tests = vec![
+        BooleanTest {
+            input: "true;".to_string(),
+            value: true,
+            token_type: TokenType::TRUE,
+        },
+        BooleanTest {
+            input: "false;".to_string(),
+            value: false,
+            token_type: TokenType::FALSE,
+        },
+    ];
+
+    for tt in tests {
+        let p = init_program(tt.input);
+
+        let stmts = p.statements;
+        assert_eq!(stmts.len(), 1, "Statement length is wrong");
+
+        let stmt = stmts.get(0).unwrap();
+        let boolean = stmt
+            .get_statement_expr()
+            .expression
+            .get_boolean_expression();
+
+        assert_eq!(boolean.value, tt.value, "Boolean Value is wrong");
+        assert_eq!(
+            boolean.token.token_type, tt.token_type,
+            "Boolean Token Type is wrong"
+        );
+        assert_eq!(
+            boolean.token.literal,
+            tt.value.to_string(),
+            "Boolean Token Literal is wrong"
+        );
+    }
+}
+
+#[test]
 fn test_prefix_expression() {
     struct PrefixTest {
         input: String,
@@ -208,6 +252,20 @@ fn test_prefix_expression() {
             right: "foobar".to_string(),
             operator_token: TokenType::MINUS,
             right_token: TokenType::IDENT,
+        },
+        PrefixTest {
+            input: "!true;".to_string(),
+            operator: "!".to_string(),
+            right: "true".to_string(),
+            operator_token: TokenType::BANG,
+            right_token: TokenType::TRUE,
+        },
+        PrefixTest {
+            input: "!false;".to_string(),
+            operator: "!".to_string(),
+            right: "false".to_string(),
+            operator_token: TokenType::BANG,
+            right_token: TokenType::FALSE,
         },
     ];
 
@@ -336,6 +394,33 @@ fn test_infix_expression() {
             operator_token: TokenType::NOTEQ,
             right_token: TokenType::INT,
         },
+        InfixTest {
+            input: "true == true;".to_string(),
+            left: "true".to_string(),
+            operator: "==".to_string(),
+            right: "true".to_string(),
+            left_token: TokenType::TRUE,
+            operator_token: TokenType::EQ,
+            right_token: TokenType::TRUE,
+        },
+        InfixTest {
+            input: "true != false;".to_string(),
+            left: "true".to_string(),
+            operator: "!=".to_string(),
+            right: "false".to_string(),
+            left_token: TokenType::TRUE,
+            operator_token: TokenType::NOTEQ,
+            right_token: TokenType::FALSE,
+        },
+        InfixTest {
+            input: "false == false;".to_string(),
+            left: "false".to_string(),
+            operator: "==".to_string(),
+            right: "false".to_string(),
+            left_token: TokenType::FALSE,
+            operator_token: TokenType::EQ,
+            right_token: TokenType::FALSE,
+        },
     ];
 
     for tt in tests {
@@ -419,6 +504,22 @@ fn test_operator_precedence() {
             input: "3 + 4 * 5 == 3 * 1 + 4 * 5;".to_string(),
             expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))".to_string(),
         },
+        PrecedenceTest {
+            input: "true;".to_string(),
+            expected: "true".to_string(),
+        },
+        PrecedenceTest {
+            input: "false;".to_string(),
+            expected: "false".to_string(),
+        },
+        PrecedenceTest {
+            input: "3 < 5 == true;".to_string(),
+            expected: "((3 < 5) == true)".to_string(),
+        },
+        PrecedenceTest {
+            input: "3 > 5 == false;".to_string(),
+            expected: "((3 > 5) == false)".to_string(),
+        },
     ];
 
     for tt in tests {
@@ -433,6 +534,7 @@ fn test_literal_expression(expr: &Expression, expected: &str) {
     match expr {
         Expression::Identifier(_) => test_identifier(expr, expected),
         Expression::IntegerLiteral(_) => test_integer(expr, expected.parse::<i64>().unwrap()),
+        Expression::BooleanExpression(_) => test_boolean(expr, expected.parse::<bool>().unwrap()),
         _ => panic!("Not a literal expression"),
     }
 }
@@ -463,5 +565,20 @@ fn test_integer(expr: &Expression, value: i64) {
         int.token.literal,
         value.to_string(),
         "Integer Token Literal is wrong"
+    );
+}
+
+fn test_boolean(expr: &Expression, value: bool) {
+    let boolean = expr.get_boolean_expression();
+    assert_eq!(boolean.value, value, "Boolean Value is wrong");
+    assert_eq!(
+        boolean.token.token_type,
+        if value { TokenType::TRUE } else { TokenType::FALSE },
+        "Boolean Token Type is wrong"
+    );
+    assert_eq!(
+        boolean.token.literal,
+        value.to_string(),
+        "Boolean Token Literal is wrong"
     );
 }
