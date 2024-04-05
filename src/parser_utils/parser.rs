@@ -5,8 +5,8 @@ use crate::lexer_utils::lexer::*;
 use crate::lexer_utils::token;
 use crate::lexer_utils::token::*;
 use crate::parser_utils::ast::{
-    BooleanExpression, Expression, ExpressionStatement, Identifier, InfixExpression,
-    IntegerLiteral, LetStatement, Node, PrefixExpression, Program, ReturnStatement, Statement,
+    BooleanExpression, Expression, ExpressionStatement, Identifier, IfExpression, InfixExpression,
+    IntegerLiteral, LetStatement, Node, PrefixExpression, Program, ReturnStatement, Statement, BlockStatement
 };
 
 type PrefixParse = fn(&mut Parser) -> Result<Expression, String>;
@@ -70,6 +70,7 @@ impl Parser {
         self.register_prefix(TokenType::TRUE, Self::parse_boolean);
         self.register_prefix(TokenType::FALSE, Self::parse_boolean);
         self.register_prefix(TokenType::LPAREN, Self::parse_grouped_expression);
+        self.register_prefix(TokenType::IF, Self::parse_if_expression);
 
         self.register_infix(TokenType::PLUS, Self::parse_infix_expression);
         self.register_infix(TokenType::MINUS, Self::parse_infix_expression);
@@ -255,7 +256,53 @@ impl Parser {
         println!("{:?}", expr);
         match self.expect_peek(TokenType::RPAREN) {
             Ok(_) => expr,
-            Err(_) => Err("Expected closing parenthesis".to_string())
+            Err(_) => Err("Expected closing parenthesis".to_string()),
+        }
+    }
+
+    pub fn parse_if_expression(&mut self) -> Result<Expression, String> {
+        let token = self.cur_token.clone();
+
+        if self.expect_peek(TokenType::LPAREN).is_err() {
+            return Err("Expected opening parenthesis".to_string());
+        }
+
+        self.next_token();
+        let condition = self.parse_expression(Precedence::LOWEST);
+
+        if self.expect_peek(TokenType::RPAREN).is_err() {
+            return Err("Expected closing parenthesis".to_string());
+        }
+        if self.expect_peek(TokenType::LBRACE).is_err() {
+            return Err("Expected opening brace".to_string());
+        }
+        let consequence = self.parse_block_statement();
+        
+        Ok(Expression::IfExpression(IfExpression {
+            token: token,
+            condition: Box::new(condition.unwrap()),
+            consequence: consequence,
+            alternative: None,
+        }))
+    }
+
+    pub fn parse_block_statement(&mut self) -> BlockStatement {
+        let token = self.cur_token.clone();
+        self.next_token();
+
+        let mut statements = Vec::new();
+        while self.cur_token_is(TokenType::RBRACE) && self.cur_token_is(TokenType::EOF) {
+            let stmt = self.parse_statement();
+
+            if stmt.is_ok() {
+                statements.push(stmt.unwrap());
+            }
+            self.next_token();
+        }
+
+        BlockStatement {
+            token: token,
+            statements: statements,
         }
     }
 

@@ -1,6 +1,6 @@
 use crate::lexer_utils::token::Token;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Node {
     Statement(Statement),
     Expression(Expression),
@@ -39,7 +39,7 @@ impl Node {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     LetStatement(LetStatement),
     ReturnStatement(ReturnStatement),
@@ -68,7 +68,9 @@ pub enum Expression {
     IntegerLiteral(IntegerLiteral),
     PrefixExpression(PrefixExpression),
     InfixExpression(InfixExpression),
-    BooleanExpression(BooleanExpression)
+    BooleanExpression(BooleanExpression),
+    BlockStatement(BlockStatement),
+    IfExpression(IfExpression),
 }
 impl Expression {
     fn token(&self) -> &Token {
@@ -78,6 +80,8 @@ impl Expression {
             Expression::PrefixExpression(expr) => &expr.token,
             Expression::InfixExpression(expr) => &expr.token,
             Expression::BooleanExpression(expr) => &expr.token,
+            Expression::IfExpression(expr) => &expr.token,
+            Expression::BlockStatement(expr) => &expr.token,
         }
     }
     pub fn get_identifer(&self) -> &Identifier {
@@ -92,6 +96,14 @@ impl Expression {
             _ => panic!("Not an integer literal"),
         }
     }
+
+    pub fn get_boolean_expression(&self) -> &BooleanExpression {
+        match self {
+            Expression::BooleanExpression(expr) => expr,
+            _ => panic!("Not a boolean expression"),
+        }
+    }
+
     pub fn get_prefix_expr(&self) -> &PrefixExpression {
         match self {
             Expression::PrefixExpression(expr) => expr,
@@ -105,10 +117,17 @@ impl Expression {
         }
     }
 
-    pub fn get_boolean_expression(&self) -> &BooleanExpression {
+    pub fn get_block_statement(&self) -> &BlockStatement {
         match self {
-            Expression::BooleanExpression(expr) => expr,
-            _ => panic!("Not a boolean expression"),
+            Expression::BlockStatement(expr) => expr,
+            _ => panic!("Not a block statement"),
+        }
+    }
+
+    pub fn get_if_expr(&self) -> &IfExpression {
+        match self {
+            Expression::IfExpression(expr) => expr,
+            _ => panic!("Not an if expression"),
         }
     }
 
@@ -133,11 +152,13 @@ impl Expression {
             Expression::PrefixExpression(expr) => expr.string(),
             Expression::InfixExpression(expr) => expr.precedence(),
             Expression::BooleanExpression(expr) => expr.string(),
+            Expression::IfExpression(expr) => expr.string(),
+            Expression::BlockStatement(expr) => expr.string(),
         }
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
@@ -148,7 +169,7 @@ impl LetStatement {
         format!("{} = {};", self.name.value, self.value)
     }
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ReturnStatement {
     pub token: Token,
     pub return_value: String,
@@ -158,7 +179,7 @@ impl ReturnStatement {
         format!("return {};", self.return_value)
     }
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ExpressionStatement {
     pub token: Token,
     pub expression: Box<Expression>,
@@ -166,6 +187,24 @@ pub struct ExpressionStatement {
 impl ExpressionStatement {
     pub fn string(&self) -> String {
         self.expression.string()
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct BlockStatement {
+    pub token: Token,
+    pub statements: Vec<Node>,
+}
+impl BlockStatement {
+    pub fn string(&self) -> String {
+        let mut block = String::new();
+        for stmt in &self.statements {
+            match stmt {
+                Node::Statement(stmt) => block.push_str(&stmt.string()),
+                Node::Expression(expr) => block.push_str(&expr.string()),
+            }
+        }
+        block
     }
 }
 
@@ -180,6 +219,18 @@ pub struct IntegerLiteral {
     pub token: Token,
     pub value: i64,
 }
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct BooleanExpression {
+    pub token: Token,
+    pub value: bool,
+}
+impl BooleanExpression {
+    fn string(&self) -> String {
+        self.value.to_string()
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct PrefixExpression {
     pub token: Token, // Token for the operator
@@ -210,13 +261,21 @@ impl InfixExpression {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct BooleanExpression {
+pub struct IfExpression {
     pub token: Token,
-    pub value: bool,
+    pub condition: Box<Expression>,
+    pub consequence: BlockStatement,
+    pub alternative: Option<BlockStatement>,
+
 }
-impl BooleanExpression {
-    fn string(&self) -> String {
-        self.value.to_string()
+impl IfExpression {
+    pub fn string(&self) -> String {
+        let mut if_expr = String::new();
+        if_expr.push_str(&format!("if {} {}", self.condition.string(), self.consequence.string()));
+        if let Some(alt) = &self.alternative {
+            if_expr.push_str(&format!("else {}", alt.string()));
+        }
+        if_expr
     }
 }
 

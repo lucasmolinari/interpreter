@@ -568,6 +568,25 @@ fn test_operator_precedence() {
     }
 }
 
+#[test]
+fn test_if_expression(){
+    let input = "if (x < y) { x }".to_string();
+    let p = init_program(input.clone());
+
+    let stmts = p.statements;
+    assert_eq!(stmts.len(), 1, "Statement length is wrong");
+
+    let stmt = stmts.get(0).unwrap();
+    
+    let if_expr = stmt.get_statement_expr().expression.get_if_expr();
+    assert_eq!(if_expr.token.literal, "if", "Token Literal is wrong");
+
+    test_literal_expression(&if_expr.condition, "x < y");
+    assert_eq!(if_expr.condition.string(), "(x < y)", "Condition String is wrong");
+    assert_eq!(if_expr.consequence.string(), "x", "Consequence String is wrong");
+
+}   
+
 fn test_literal_expression(expr: &Expression, expected: &str) {
     match expr {
         Expression::Identifier(_) => test_identifier(expr, expected),

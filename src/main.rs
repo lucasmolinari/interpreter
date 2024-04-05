@@ -17,6 +17,6 @@ fn main() {
     let mut p = Parser::new(l);
     let program = p.parse_program();
     for (i, stmt) in program.statements.iter().enumerate() {
-        println!("{} {:?}", i, stmt);
+        println!("{} {:?}", i, stmt.get_statement_expr().expression.string());
     }
 }
