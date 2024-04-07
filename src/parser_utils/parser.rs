@@ -5,8 +5,9 @@ use crate::lexer_utils::lexer::*;
 use crate::lexer_utils::token;
 use crate::lexer_utils::token::*;
 use crate::parser_utils::ast::{
-    BooleanExpression, Expression, ExpressionStatement, Identifier, IfExpression, InfixExpression,
-    IntegerLiteral, LetStatement, Node, PrefixExpression, Program, ReturnStatement, Statement, BlockStatement
+    BlockStatement, BooleanExpression, Expression, ExpressionStatement, Identifier, IfExpression,
+    InfixExpression, IntegerLiteral, LetStatement, Node, PrefixExpression, Program,
+    ReturnStatement, Statement,
 };
 
 type PrefixParse = fn(&mut Parser) -> Result<Expression, String>;
@@ -277,12 +278,21 @@ impl Parser {
             return Err("Expected opening brace".to_string());
         }
         let consequence = self.parse_block_statement();
-        
+
+        let mut alternative = None;
+        if self.peek_token_is(TokenType::ELSE) {
+            self.next_token();
+            alternative = match self.expect_peek(TokenType::LBRACE) {
+                Ok(_) => Some(self.parse_block_statement()),
+                Err(_) => return Err("Expected opening brace".to_string()),
+            };
+        }
+
         Ok(Expression::IfExpression(IfExpression {
             token: token,
             condition: Box::new(condition.unwrap()),
             consequence: consequence,
-            alternative: None,
+            alternative: alternative,
         }))
     }
 
@@ -291,15 +301,13 @@ impl Parser {
         self.next_token();
 
         let mut statements = Vec::new();
-        while self.cur_token_is(TokenType::RBRACE) && self.cur_token_is(TokenType::EOF) {
+        while !self.cur_token_is(TokenType::RBRACE) && !self.cur_token_is(TokenType::EOF) {
             let stmt = self.parse_statement();
-
             if stmt.is_ok() {
                 statements.push(stmt.unwrap());
             }
             self.next_token();
         }
-
         BlockStatement {
             token: token,
             statements: statements,

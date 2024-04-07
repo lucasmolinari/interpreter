@@ -266,15 +266,19 @@ pub struct IfExpression {
     pub condition: Box<Expression>,
     pub consequence: BlockStatement,
     pub alternative: Option<BlockStatement>,
-
 }
 impl IfExpression {
     pub fn string(&self) -> String {
         let mut if_expr = String::new();
-        if_expr.push_str(&format!("if {} {}", self.condition.string(), self.consequence.string()));
-        if let Some(alt) = &self.alternative {
-            if_expr.push_str(&format!("else {}", alt.string()));
-        }
+        if_expr.push_str(&format!(
+            "if {} {{ {} }}",
+            self.condition.string(),
+            self.consequence.string()
+        ));
+        let alternative = match &self.alternative {
+            Some(alt) => if_expr.push_str(&format!(" else {{ {} }}", alt.string())),
+            None => if_expr.push_str(""),
+        };
         if_expr
     }
 }

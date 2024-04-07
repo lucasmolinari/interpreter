@@ -207,7 +207,11 @@ fn test_boolean_expresion() {
             .expression
             .get_boolean_expression();
 
-        assert_eq!(boolean.value, tt.value, "Test [{}] Boolean Value is wrong", input);
+        assert_eq!(
+            boolean.value, tt.value,
+            "Test [{}] Boolean Value is wrong",
+            input
+        );
         assert_eq!(
             boolean.token.token_type, tt.token_type,
             "Test [{}] Boolean Token Type is wrong",
@@ -562,30 +566,57 @@ fn test_operator_precedence() {
     for tt in tests {
         let input = tt.input;
         let program = init_program(input.clone());
-        
+
         let string = program.string();
-        assert_eq!(string, tt.expected, "Test [{}] Expression String is wrong", input);
+        assert_eq!(
+            string, tt.expected,
+            "Test [{}] Expression String is wrong",
+            input
+        );
     }
 }
 
 #[test]
-fn test_if_expression(){
+fn test_if_expression() {
     let input = "if (x < y) { x }".to_string();
-    let p = init_program(input.clone());
+    let p = init_program(input);
 
     let stmts = p.statements;
     assert_eq!(stmts.len(), 1, "Statement length is wrong");
 
     let stmt = stmts.get(0).unwrap();
-    
+
     let if_expr = stmt.get_statement_expr().expression.get_if_expr();
     assert_eq!(if_expr.token.literal, "if", "Token Literal is wrong");
+    assert_eq!(if_expr.alternative.is_none(), true, "Alternative is wrong");
 
-    test_literal_expression(&if_expr.condition, "x < y");
-    assert_eq!(if_expr.condition.string(), "(x < y)", "Condition String is wrong");
-    assert_eq!(if_expr.consequence.string(), "x", "Consequence String is wrong");
+    assert_eq!(if_expr.string(), "if (x < y) { x }", "String is wrong");
+}
 
-}   
+#[test]
+fn test_if_else_expression() {
+    let input = "if (x < y) { x } else { y }".to_string();
+    let p = init_program(input);
+
+    let stmts = p.statements;
+    assert_eq!(stmts.len(), 1, "Statement length is wrong");
+
+    let stmt = stmts.get(0).unwrap();
+
+    let if_else_expr = stmt.get_statement_expr().expression.get_if_expr();
+    assert_eq!(if_else_expr.token.literal, "if", "Token Literal is wrong");
+    assert_eq!(
+        if_else_expr.alternative.is_some(),
+        true,
+        "Alternative is wrong"
+    );
+
+    assert_eq!(
+        if_else_expr.string(),
+        "if (x < y) { x } else { y }",
+        "String is wrong"
+    );
+}
 
 fn test_literal_expression(expr: &Expression, expected: &str) {
     match expr {
@@ -630,7 +661,11 @@ fn test_boolean(expr: &Expression, value: bool) {
     assert_eq!(boolean.value, value, "Boolean Value is wrong");
     assert_eq!(
         boolean.token.token_type,
-        if value { TokenType::TRUE } else { TokenType::FALSE },
+        if value {
+            TokenType::TRUE
+        } else {
+            TokenType::FALSE
+        },
         "Boolean Token Type is wrong"
     );
     assert_eq!(
