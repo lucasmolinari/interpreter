@@ -39,6 +39,13 @@ impl Node {
             _ => panic!("{:?} is not an expression statement", self),
         }
     }
+
+    pub fn string(&self) -> String {
+        match self {
+            Node::Statement(stmt) => stmt.string(),
+            Node::Expression(expr) => expr.string(),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -74,6 +81,7 @@ pub enum Expression {
     BlockStatement(BlockStatement),
     IfExpression(IfExpression),
     FunctionLiteral(FunctionLiteral),
+    CallExpression(CallExpression),
 }
 impl Expression {
     fn token(&self) -> &Token {
@@ -86,6 +94,7 @@ impl Expression {
             Expression::IfExpression(expr) => &expr.token,
             Expression::BlockStatement(expr) => &expr.token,
             Expression::FunctionLiteral(expr) => &expr.token,
+            Expression::CallExpression(expr) => &expr.token,
         }
     }
     pub fn get_identifer(&self) -> &Identifier {
@@ -142,6 +151,13 @@ impl Expression {
         }
     }
 
+    pub fn get_call_expr(&self) -> &CallExpression {
+        match self {
+            Expression::CallExpression(expr) => expr,
+            _ => panic!("Not a call expression"),
+        }
+    }
+
     pub fn is_integer_literal(&self) -> bool {
         match self {
             Expression::IntegerLiteral(_) => true,
@@ -166,6 +182,7 @@ impl Expression {
             Expression::IfExpression(expr) => expr.string(),
             Expression::BlockStatement(expr) => expr.string(),
             Expression::FunctionLiteral(expr) => expr.string(),
+            Expression::CallExpression(expr) => expr.string(),
         }
     }
 }
@@ -321,6 +338,25 @@ impl FunctionLiteral {
             parameters,
             self.body.string()
         )
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct CallExpression {
+    pub token: Token,              // '(' Token
+    pub function: Box<Expression>, // Identifier | Function Literal
+    pub arguments: Vec<Expression>,
+}
+impl CallExpression {
+    pub fn string(&self) -> String {
+        let args = self
+            .arguments
+            .iter()
+            .map(|x| x.string())
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        format!("{}({})", self.function.string(), args)
     }
 }
 

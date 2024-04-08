@@ -4,6 +4,7 @@ use std::hash::Hash;
 use crate::lexer_utils::lexer::*;
 use crate::lexer_utils::token;
 use crate::lexer_utils::token::*;
+use crate::parser_utils::ast::CallExpression;
 use crate::parser_utils::ast::FunctionLiteral;
 use crate::parser_utils::ast::{
     BlockStatement, BooleanExpression, Expression, ExpressionStatement, Identifier, IfExpression,
@@ -49,6 +50,7 @@ impl Parser {
             (TokenType::MINUS, Precedence::SUM),
             (TokenType::ASTERISK, Precedence::PRODUCT),
             (TokenType::SLASH, Precedence::PRODUCT),
+            (TokenType::LPAREN, Precedence::CALL)
         ]);
 
         let mut p = Parser {
@@ -83,6 +85,7 @@ impl Parser {
         self.register_infix(TokenType::NOTEQ, Self::parse_infix_expression);
         self.register_infix(TokenType::LT, Self::parse_infix_expression);
         self.register_infix(TokenType::GT, Self::parse_infix_expression);
+        self.register_infix(TokenType::LPAREN, Self::parse_call_expression);
     }
     fn next_token(&mut self) {
         self.cur_token = self.peek_token.clone();
@@ -256,7 +259,6 @@ impl Parser {
     pub fn parse_grouped_expression(&mut self) -> Result<Expression, String> {
         self.next_token();
         let expr = self.parse_expression(Precedence::LOWEST);
-        println!("{:?}", expr);
         match self.expect_peek(TokenType::RPAREN) {
             Ok(_) => expr,
             Err(_) => Err("Expected closing parenthesis".to_string()),
@@ -304,6 +306,9 @@ impl Parser {
             return Err("Expected '(' ".to_string())
         }
         let parameters = self.parse_function_parameters();
+        if parameters.is_err() {
+            return Err(parameters.unwrap_err())
+        }
 
         if self.expect_peek(TokenType::LBRACE).is_err() {
             return Err("Expected '{'".to_string())
@@ -312,7 +317,7 @@ impl Parser {
         let body = self.parse_block_statement();
         Ok(Expression::FunctionLiteral(FunctionLiteral{
             token: token,
-            parameters: parameters,
+            parameters: parameters.unwrap(),
             body: body
         }))
     }
@@ -335,12 +340,12 @@ impl Parser {
         }
     }
 
-    pub fn parse_function_parameters(&mut self) -> Vec<Identifier> {
+    pub fn parse_function_parameters(&mut self) -> Result<Vec<Identifier>, String> {
         let mut identifiers: Vec<Identifier> = Vec::new();
         
         if self.peek_token_is(TokenType::RPAREN) {
             self.next_token();
-            return identifiers
+            return Ok(identifiers)
         }
         
         self.next_token();
@@ -359,11 +364,49 @@ impl Parser {
             });
         }
         if self.expect_peek(TokenType::RPAREN).is_err() {
-            return Vec::new();
+            return Err("Expected ')'".to_string());
         }
-        identifiers
+        Ok(identifiers)
+    }
+
+    pub fn parse_call_expression(&mut self, function: Expression) -> Result<Expression, String> {
+        self.next_token();
+        let token = self.cur_token.clone();
+        let arguments = self.parse_call_arguments();
+        if arguments.is_err() {
+            return Err(arguments.unwrap_err())
+        }
+
+        Ok(Expression::CallExpression(CallExpression{
+            token: token,
+            function: Box::new(function),
+            arguments: arguments.unwrap(),
+        }))
     }
     
+    pub fn parse_call_arguments(&mut self) -> Result<Vec<Expression>, String> {
+        let mut args: Vec<Expression> = Vec::new();
+
+        if self.peek_token_is(TokenType::RPAREN){
+            self.next_token();
+            return Ok(args)
+        }
+
+        self.next_token();
+        
+        args.push(self.parse_expression(Precedence::LOWEST).unwrap());
+
+        while self.peek_token_is(TokenType::COMMA) {
+            self.next_token();
+            self.next_token();
+            args.push(self.parse_expression(Precedence::LOWEST).unwrap());
+        }
+        if self.expect_peek(TokenType::RPAREN).is_err() {
+            return Err("Expected ')'".to_string())
+        }
+        Ok(args)
+    }
+
     pub fn parse_identifier(&mut self) -> Result<Expression, String> {
         Ok(Expression::Identifier(Identifier {
             token: self.cur_token.clone(),

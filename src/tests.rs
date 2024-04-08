@@ -561,6 +561,18 @@ fn test_operator_precedence() {
             input: "!(true == true);".to_string(),
             expected: "(!(true == true))".to_string(),
         },
+        PrecedenceTest {
+            input: "a + add(b * c) + d;".to_string(),
+            expected: "((a + add((b * c))) + d)".to_string(),
+        },
+        PrecedenceTest {
+            input: "add(a, b, 1, 2 * 3, 4 + 5);".to_string(),
+            expected: "add(a, b, 1, (2 * 3), (4 + 5))".to_string(),
+        },
+        PrecedenceTest {
+            input: "add(a + b + c * d / f + g);".to_string(),
+            expected: "add((((a + b) + ((c * d) / f)) + g))".to_string(),
+        },
     ];
 
     for tt in tests {
@@ -680,12 +692,97 @@ fn test_function_literal_parameters() {
             .expression
             .get_function_expr();
 
-        if function_expr.parameters.len() != tt.expected.len() {
-            panic!("Test [{}] Parameters Length is wrong", tt.input);
+        assert_eq!(
+            function_expr.parameters.len(),
+            tt.expected.len(),
+            "Parameters Length is wrong"
+        );
+        
+        for (j, param) in function_expr.parameters.iter().enumerate() {
+            test_identifier(param, tt.expected.get(j).unwrap())
         }
+    }
+}
 
-        for (i, param) in function_expr.parameters.iter().enumerate() {
-            test_identifier(param, tt.expected.get(i).unwrap())
+#[test]
+fn test_call_expression() {
+    let input = "add(1, 2 * 3, 4 + 5);".to_string();
+    let p = init_program(input);
+
+    let stmts = p.statements;
+    assert_eq!(stmts.len(), 1, "Statement length is wrong");
+
+    let call_expr = stmts
+        .get(0)
+        .unwrap()
+        .get_statement_expr()
+        .expression
+        .get_call_expr();
+    test_identifier(call_expr.function.get_identifer(), "add");
+
+    assert_eq!(call_expr.arguments.len(), 3, "Arguments length is wrong");
+
+    test_literal_expression(&call_expr.arguments[0], "1");
+    test_infix_expression_local(&call_expr.arguments[1], "2", "*", "3");
+    test_infix_expression_local(&call_expr.arguments[2], "4", "+", "5");
+}
+
+#[test]
+fn test_call_expression_args() {
+    struct CallExpressionTest {
+        input: String,
+        expected_ident: String,
+        expected_args: Vec<String>,
+    }
+
+    let tests = vec![
+        CallExpressionTest {
+            input: "add();".to_string(),
+            expected_ident: "add".to_string(),
+            expected_args: vec![],
+        },
+        CallExpressionTest {
+            input: "add(1);".to_string(),
+            expected_ident: "add".to_string(),
+            expected_args: vec!["1".to_string()],
+        },
+        CallExpressionTest {
+            input: "add(1, 2 * 3, 4 + 5);".to_string(),
+            expected_ident: "add".to_string(),
+            expected_args: vec![
+                "1".to_string(),
+                "(2 * 3)".to_string(),
+                "(4 + 5)".to_string(),
+            ],
+        },
+    ];
+
+    for (i, tt) in tests.iter().enumerate() {
+        let p = init_program(tt.input.clone());
+        let call_expr = p
+            .statements
+            .get(0)
+            .unwrap()
+            .get_statement_expr()
+            .expression
+            .get_call_expr();
+
+        test_identifier(&call_expr.function.get_identifer(), &tt.expected_ident);
+        
+        assert_eq!(
+            call_expr.arguments.len(),
+            tt.expected_args.len(),
+            "Test [{}] Arguments length is wrong",
+            i
+        );
+
+        for (j, arg) in call_expr.arguments.iter().enumerate() {
+            assert_eq!(
+                &arg.string(),
+                tt.expected_args.get(j).unwrap(),
+                "Test [{}] Argument String is wrong",
+                i
+            );
         }
     }
 }
@@ -700,7 +797,7 @@ fn test_literal_expression(expr: &Expression, expected: &str) {
             expr.get_boolean_expression(),
             expected.parse::<bool>().unwrap(),
         ),
-        _ => panic!("Not a literal expression"),
+        _ => panic!("{:?} Isn't a literal expression", expr),
     }
 }
 
