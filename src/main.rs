@@ -2,10 +2,10 @@
 
 mod lexer_utils;
 mod parser_utils;
+mod repl;
 mod tests;
 
 use lexer_utils::lexer::Lexer;
-use lexer_utils::repl;
 use parser_utils::parser::Parser;
 
 use std::fs;
