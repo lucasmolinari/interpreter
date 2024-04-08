@@ -4,6 +4,7 @@ use std::hash::Hash;
 use crate::lexer_utils::lexer::*;
 use crate::lexer_utils::token;
 use crate::lexer_utils::token::*;
+use crate::parser_utils::ast::FunctionLiteral;
 use crate::parser_utils::ast::{
     BlockStatement, BooleanExpression, Expression, ExpressionStatement, Identifier, IfExpression,
     InfixExpression, IntegerLiteral, LetStatement, Node, PrefixExpression, Program,
@@ -72,6 +73,7 @@ impl Parser {
         self.register_prefix(TokenType::FALSE, Self::parse_boolean);
         self.register_prefix(TokenType::LPAREN, Self::parse_grouped_expression);
         self.register_prefix(TokenType::IF, Self::parse_if_expression);
+        self.register_prefix(TokenType::FUNCTION, Self::parse_function_literal);
 
         self.register_infix(TokenType::PLUS, Self::parse_infix_expression);
         self.register_infix(TokenType::MINUS, Self::parse_infix_expression);
@@ -296,6 +298,25 @@ impl Parser {
         }))
     }
 
+    pub fn parse_function_literal(&mut self) -> Result<Expression, String> {
+        let token = self.cur_token.clone();
+        if self.expect_peek(TokenType::LPAREN).is_err() {
+            return Err("Expected '(' ".to_string())
+        }
+        let parameters = self.parse_function_parameters();
+
+        if self.expect_peek(TokenType::LBRACE).is_err() {
+            return Err("Expected '{'".to_string())
+        }
+     
+        let body = self.parse_block_statement();
+        Ok(Expression::FunctionLiteral(FunctionLiteral{
+            token: token,
+            parameters: parameters,
+            body: body
+        }))
+    }
+
     pub fn parse_block_statement(&mut self) -> BlockStatement {
         let token = self.cur_token.clone();
         self.next_token();
@@ -314,6 +335,35 @@ impl Parser {
         }
     }
 
+    pub fn parse_function_parameters(&mut self) -> Vec<Identifier> {
+        let mut identifiers: Vec<Identifier> = Vec::new();
+        
+        if self.peek_token_is(TokenType::RPAREN) {
+            self.next_token();
+            return identifiers
+        }
+        
+        self.next_token();
+        
+        identifiers.push(Identifier {
+            token: self.cur_token.clone(),
+            value: self.cur_token.literal.clone(),
+        });
+
+        while self.peek_token_is(TokenType::COMMA) {
+            self.next_token();
+            self.next_token();
+            identifiers.push(Identifier {
+                token: self.cur_token.clone(),
+                value: self.cur_token.literal.clone(),
+            });
+        }
+        if self.expect_peek(TokenType::RPAREN).is_err() {
+            return Vec::new();
+        }
+        identifiers
+    }
+    
     pub fn parse_identifier(&mut self) -> Result<Expression, String> {
         Ok(Expression::Identifier(Identifier {
             token: self.cur_token.clone(),

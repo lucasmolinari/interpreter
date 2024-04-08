@@ -1,7 +1,7 @@
 use crate::lexer_utils::{lexer::Lexer, token::TokenType};
-use crate::parser_utils::ast::Program;
+use crate::parser_utils::ast::{Identifier, IntegerLiteral, Program};
 use crate::parser_utils::{
-    ast::{Expression, ExpressionStatement, Node, Statement},
+    ast::{BooleanExpression, Expression, ExpressionStatement, Node, Statement},
     parser::Parser,
 };
 
@@ -618,17 +618,93 @@ fn test_if_else_expression() {
     );
 }
 
+#[test]
+fn test_function_literal_expression() {
+    let input = "fn(x, y) { x + y; }".to_string();
+    let p = init_program(input);
+
+    let stmts = p.statements;
+    assert_eq!(stmts.len(), 1, "Statement length is wrong");
+
+    let stmt = stmts.get(0).unwrap();
+
+    let func_expr = stmt.get_statement_expr().expression.get_function_expr();
+
+    assert_eq!(
+        func_expr.parameters.len(),
+        2,
+        "Function parameters length is wrong"
+    );
+    assert_eq!(
+        func_expr.body.statements.len(),
+        1,
+        "Body statements length is wrong"
+    );
+
+    assert_eq!(
+        func_expr.string(),
+        "fn ( x, y ) { (x + y) }",
+        "Function String is wrong"
+    );
+}
+
+#[test]
+fn test_function_literal_parameters() {
+    struct ParameterTest {
+        input: String,
+        expected: Vec<String>,
+    }
+    let tests = vec![
+        ParameterTest {
+            input: "fn() {};".to_string(),
+            expected: vec![],
+        },
+        ParameterTest {
+            input: "fn(x) {};".to_string(),
+            expected: vec!["x".to_string()],
+        },
+        ParameterTest {
+            input: "fn(x, y, z) {};".to_string(),
+            expected: vec!["x".to_string(), "y".to_string(), "z".to_string()],
+        },
+    ];
+
+    for tt in tests {
+        let p = init_program(tt.input.clone());
+
+        let function_expr = p
+            .statements
+            .get(0)
+            .unwrap()
+            .get_statement_expr()
+            .expression
+            .get_function_expr();
+
+        if function_expr.parameters.len() != tt.expected.len() {
+            panic!("Test [{}] Parameters Length is wrong", tt.input);
+        }
+
+        for (i, param) in function_expr.parameters.iter().enumerate() {
+            test_identifier(param, tt.expected.get(i).unwrap())
+        }
+    }
+}
+
 fn test_literal_expression(expr: &Expression, expected: &str) {
     match expr {
-        Expression::Identifier(_) => test_identifier(expr, expected),
-        Expression::IntegerLiteral(_) => test_integer(expr, expected.parse::<i64>().unwrap()),
-        Expression::BooleanExpression(_) => test_boolean(expr, expected.parse::<bool>().unwrap()),
+        Expression::Identifier(_) => test_identifier(expr.get_identifer(), expected),
+        Expression::IntegerLiteral(_) => {
+            test_integer(expr.get_integer_literal(), expected.parse::<i64>().unwrap())
+        }
+        Expression::BooleanExpression(_) => test_boolean(
+            expr.get_boolean_expression(),
+            expected.parse::<bool>().unwrap(),
+        ),
         _ => panic!("Not a literal expression"),
     }
 }
 
-fn test_identifier(expr: &Expression, value: &str) {
-    let ident = expr.get_identifer();
+fn test_identifier(ident: &Identifier, value: &str) {
     assert_eq!(ident.value, value, "Identifier Value is wrong");
     assert_eq!(
         ident.token.token_type,
@@ -641,8 +717,7 @@ fn test_identifier(expr: &Expression, value: &str) {
     );
 }
 
-fn test_integer(expr: &Expression, value: i64) {
-    let int = expr.get_integer_literal();
+fn test_integer(int: &IntegerLiteral, value: i64) {
     assert_eq!(int.value, value, "Integer Value is wrong");
     assert_eq!(
         int.token.token_type,
@@ -656,8 +731,7 @@ fn test_integer(expr: &Expression, value: i64) {
     );
 }
 
-fn test_boolean(expr: &Expression, value: bool) {
-    let boolean = expr.get_boolean_expression();
+fn test_boolean(boolean: &BooleanExpression, value: bool) {
     assert_eq!(boolean.value, value, "Boolean Value is wrong");
     assert_eq!(
         boolean.token.token_type,
@@ -673,4 +747,16 @@ fn test_boolean(expr: &Expression, value: bool) {
         value.to_string(),
         "Boolean Token Literal is wrong"
     );
+}
+
+fn test_infix_expression_local(
+    infix: &Expression,
+    expected_left: &str,
+    operator: &str,
+    expected_right: &str,
+) {
+    let infix_expr = infix.get_infix_expr();
+    test_literal_expression(&infix_expr.left, expected_left);
+    test_literal_expression(&infix_expr.right, expected_right);
+    assert_eq!(&infix_expr.operator, operator, "Operator is wrong");
 }

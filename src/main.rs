@@ -16,7 +16,9 @@ fn main() {
     let mut l = Lexer::new(input.unwrap());
     let mut p = Parser::new(l);
     let program = p.parse_program();
-    for (i, stmt) in program.statements.iter().enumerate() {
-        println!("{} {:?}", i, stmt.get_statement_expr());
+    let stmts = program.statements;
+    let body = stmts[0].get_statement_expr().expression.get_function_expr().body.clone();
+    for (i ,stmt) in body.statements.iter().enumerate() {
+        println!("{} {:?}", i, stmt);
     }
 }

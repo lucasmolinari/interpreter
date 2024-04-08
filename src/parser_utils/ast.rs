@@ -1,3 +1,5 @@
+use std::string;
+
 use crate::lexer_utils::token::Token;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -71,6 +73,7 @@ pub enum Expression {
     BooleanExpression(BooleanExpression),
     BlockStatement(BlockStatement),
     IfExpression(IfExpression),
+    FunctionLiteral(FunctionLiteral),
 }
 impl Expression {
     fn token(&self) -> &Token {
@@ -82,6 +85,7 @@ impl Expression {
             Expression::BooleanExpression(expr) => &expr.token,
             Expression::IfExpression(expr) => &expr.token,
             Expression::BlockStatement(expr) => &expr.token,
+            Expression::FunctionLiteral(expr) => &expr.token,
         }
     }
     pub fn get_identifer(&self) -> &Identifier {
@@ -131,6 +135,13 @@ impl Expression {
         }
     }
 
+    pub fn get_function_expr(&self) -> &FunctionLiteral {
+        match self {
+            Expression::FunctionLiteral(expr) => expr,
+            _ => panic!("Not a function expression"),
+        }
+    }
+
     pub fn is_integer_literal(&self) -> bool {
         match self {
             Expression::IntegerLiteral(_) => true,
@@ -154,6 +165,7 @@ impl Expression {
             Expression::BooleanExpression(expr) => expr.string(),
             Expression::IfExpression(expr) => expr.string(),
             Expression::BlockStatement(expr) => expr.string(),
+            Expression::FunctionLiteral(expr) => expr.string(),
         }
     }
 }
@@ -212,6 +224,11 @@ impl BlockStatement {
 pub struct Identifier {
     pub token: Token,
     pub value: String,
+}
+impl Identifier {
+    pub fn string(&self) -> String {
+        self.value.clone()
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -280,6 +297,30 @@ impl IfExpression {
             None => if_expr.push_str(""),
         };
         if_expr
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct FunctionLiteral {
+    pub token: Token, // fn token
+    pub parameters: Vec<Identifier>,
+    pub body: BlockStatement,
+}
+impl FunctionLiteral {
+    pub fn string(&self) -> String {
+        let parameters = self
+            .parameters
+            .iter()
+            .map(|x| x.string())
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        format!(
+            "{} ( {} ) {{ {} }}",
+            self.token.literal,
+            parameters,
+            self.body.string()
+        )
     }
 }
 
