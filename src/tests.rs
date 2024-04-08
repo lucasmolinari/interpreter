@@ -56,59 +56,99 @@ fn test_lexer() {
 
 #[test]
 fn test_let_statements() {
+    struct LetTests {
+        input: String,
+        expected_ident: String,
+        expected_value: String,
+    }
+
     let tests = vec![
-        ("let", "x", "5"),
-        ("let", "y", "true"),
-        ("let", "foobar", "y"),
+        LetTests {
+            input: "let x = 5;".to_string(),
+            expected_ident: "x".to_string(),
+            expected_value: "5".to_string(),
+        },
+        LetTests {
+            input: "let y = true;".to_string(),
+            expected_ident: "y".to_string(),
+            expected_value: "true".to_string(),
+        },
+        LetTests {
+            input: "let foobar = y;".to_string(),
+            expected_ident: "foobar".to_string(),
+            expected_value: "y".to_string(),
+        },
     ];
 
     for tt in tests.iter() {
-        let input = format!("{} {} = {};", tt.0, tt.1, tt.2);
-        let program = init_program(input.clone());
+        let program = init_program(tt.input.clone());
 
         let stmts = program.statements;
-        assert_eq!(stmts.len(), 1, "Test [{}] Statement length is wrong", input);
+        assert_eq!(
+            stmts.len(),
+            1,
+            "Test [{}] Statement length is wrong",
+            tt.input
+        );
 
         let stmt = stmts.get(0).unwrap();
         assert_eq!(
             stmt.get_token().token_type,
             TokenType::LET,
             "Test [{}] Statement Token Type is wrong",
-            input
+            tt.input
         );
+
         assert_eq!(
             stmt.get_token().literal,
-            tt.0,
+            "let",
             "Test [{}] Statement Token Literal is wrong",
-            input
+            tt.input
         );
+
+        let expr = &stmt.get_statement().get_let_stmt().value;
+
+        test_literal_expression(expr, &tt.expected_value);
     }
 }
 
 #[test]
 fn test_return_statements() {
-    let tests = vec![("return", "5"), ("return", "true"), ("return", "foobar")];
+    struct ReturnTests {
+        input: String,
+        expected_value: String,
+    }
+    let tests = vec![
+        ReturnTests {
+            input: "return 5;".to_string(),
+            expected_value: "5".to_string(),
+        },
+        ReturnTests {
+            input: "return true;".to_string(),
+            expected_value: "true".to_string(),
+        },
+        ReturnTests {
+            input: "return foobar;".to_string(),
+            expected_value: "foobar".to_string(),
+        },
+    ];
 
     for tt in tests.iter() {
-        let input = format!("{} {};", tt.0, tt.1);
-        let program = init_program(input.clone());
+        let program = init_program(tt.input.clone());
 
         let stmts = program.statements;
-        assert_eq!(stmts.len(), 1, "Test [{}] Statement length is wrong", input);
+        assert_eq!(stmts.len(), 1, "Test [{}] Statement length is wrong", tt.input);
 
         let stmt = stmts.get(0).unwrap();
         assert_eq!(
             stmt.get_token().token_type,
             TokenType::RETURN,
             "Test [{}] Statement Token Type is wrong",
-            input
+            tt.input
         );
-        assert_eq!(
-            stmt.get_token().literal,
-            tt.0,
-            "Test [{}] Statement Token Literal is wrong",
-            input
-        );
+
+        let expr = &stmt.get_statement().get_return_stmt().return_value;
+        test_literal_expression(expr, &tt.expected_value);
     }
 }
 
@@ -697,7 +737,7 @@ fn test_function_literal_parameters() {
             tt.expected.len(),
             "Parameters Length is wrong"
         );
-        
+
         for (j, param) in function_expr.parameters.iter().enumerate() {
             test_identifier(param, tt.expected.get(j).unwrap())
         }
@@ -768,7 +808,7 @@ fn test_call_expression_args() {
             .get_call_expr();
 
         test_identifier(&call_expr.function.get_identifer(), &tt.expected_ident);
-        
+
         assert_eq!(
             call_expr.arguments.len(),
             tt.expected_args.len(),

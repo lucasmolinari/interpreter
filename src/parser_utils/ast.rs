@@ -70,6 +70,20 @@ impl Statement {
             Statement::ExpressionStatement(stmt) => stmt.string(),
         }
     }
+
+    pub fn get_let_stmt(&self) -> &LetStatement {
+        match self {
+            Statement::LetStatement(stmt) => stmt,
+            _ => panic!("Not a let statement"),
+        }
+    }
+    
+    pub fn get_return_stmt(&self) -> &ReturnStatement {
+        match self {
+            Statement::ReturnStatement(stmt) => stmt,
+            _ => panic!("Not a return statement"),
+        }
+    }
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
@@ -191,21 +205,21 @@ impl Expression {
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
-    pub value: String,
+    pub value: Expression,
 }
 impl LetStatement {
     pub fn string(&self) -> String {
-        format!("{} = {};", self.name.value, self.value)
+        format!("{} = {};", self.name.value, self.value.string())
     }
 }
 #[derive(Debug, PartialEq, Clone)]
 pub struct ReturnStatement {
     pub token: Token,
-    pub return_value: String,
+    pub return_value: Expression,
 }
 impl ReturnStatement {
     pub fn string(&self) -> String {
-        format!("return {};", self.return_value)
+        format!("return {};", self.return_value.string())
     }
 }
 #[derive(Debug, PartialEq, Clone)]

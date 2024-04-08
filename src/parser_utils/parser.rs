@@ -115,12 +115,12 @@ impl Parser {
     }
 
     fn parse_let_statement(&mut self) -> Result<Node, String> {
-        let token = self.cur_token.clone(); // This should be the LET token
+        let token = self.cur_token.clone();
+
         if self.expect_peek(TokenType::IDENT).is_err() {
             return Err("Expected identifier".to_string());
         }
 
-        // This should be the variable name (Identifier)
         let name = Identifier {
             token: self.cur_token.clone(),
             value: self.cur_token.literal.clone(),
@@ -132,10 +132,15 @@ impl Parser {
 
         self.next_token();
 
+        let value = match self.parse_expression(Precedence::LOWEST) {
+            Ok(expr) => expr,
+            Err(err) => return Err(err),
+        };
+
         let stmt = Node::Statement(Statement::LetStatement(LetStatement {
             token: token,
             name: name,
-            value: self.cur_token.literal.clone(),
+            value: value,
         }));
 
         self.next_token();
@@ -149,9 +154,14 @@ impl Parser {
         let token = self.cur_token.clone();
         self.next_token();
 
+        let return_value = match self.parse_expression(Precedence::LOWEST) {
+            Ok(expr) => expr,
+            Err(err) => return Err(err),
+        };
+
         let stmt = Node::Statement(Statement::ReturnStatement(ReturnStatement {
             token: token,
-            return_value: self.cur_token.literal.clone(),
+            return_value: return_value,
         }));
 
         while !self.cur_token_is(TokenType::SEMICOLON) {
