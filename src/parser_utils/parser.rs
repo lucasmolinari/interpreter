@@ -144,9 +144,11 @@ impl Parser {
         }));
 
         self.next_token();
-        while !self.cur_token_is(TokenType::SEMICOLON) {
-            self.next_token()
+
+        if self.cur_token_is(TokenType::SEMICOLON) {
+            self.next_token();
         }
+        
         Ok(stmt)
     }
 
@@ -164,9 +166,10 @@ impl Parser {
             return_value: return_value,
         }));
 
-        while !self.cur_token_is(TokenType::SEMICOLON) {
-            self.next_token()
+        if self.cur_token_is(TokenType::SEMICOLON) {
+            self.next_token();
         }
+        
         Ok(stmt)
     }
 
