@@ -1,7 +1,6 @@
 use crate::lexer_utils::{lexer::Lexer, token::TokenType};
-use crate::parser_utils::ast::{Identifier, IntegerLiteral, Program};
 use crate::parser_utils::{
-    ast::{BooleanExpression, Expression, ExpressionStatement, Node, Statement},
+    ast::{BooleanExpression, Expression, Identifier, IntegerLiteral, Program},
     parser::Parser,
 };
 
@@ -12,70 +11,23 @@ fn init_program(input: String) -> Program {
 }
 
 #[test]
-fn test_lexer() {
-    let input = String::from("let x = 5; let add = fn(x, y) { x + y }; let result = add(5, 5);");
-    let mut l = Lexer::new(input);
-    let tests = vec![
-        ("let", TokenType::LET),
-        ("x", TokenType::IDENT),
-        ("=", TokenType::ASSIGN),
-        ("5", TokenType::INT),
-        (";", TokenType::SEMICOLON),
-        ("let", TokenType::LET),
-        ("add", TokenType::IDENT),
-        ("=", TokenType::ASSIGN),
-        ("fn", TokenType::FUNCTION),
-        ("(", TokenType::LPAREN),
-        ("x", TokenType::IDENT),
-        (",", TokenType::COMMA),
-        ("y", TokenType::IDENT),
-        (")", TokenType::RPAREN),
-        ("{", TokenType::LBRACE),
-        ("x", TokenType::IDENT),
-        ("+", TokenType::PLUS),
-        ("y", TokenType::IDENT),
-        ("}", TokenType::RBRACE),
-        (";", TokenType::SEMICOLON),
-        ("let", TokenType::LET),
-        ("result", TokenType::IDENT),
-        ("=", TokenType::ASSIGN),
-        ("add", TokenType::IDENT),
-        ("(", TokenType::LPAREN),
-        ("5", TokenType::INT),
-        (",", TokenType::COMMA),
-        ("5", TokenType::INT),
-        (")", TokenType::RPAREN),
-        (";", TokenType::SEMICOLON),
-        ("\0", TokenType::EOF),
-    ];
-    for (i, tt) in tests.iter().enumerate() {
-        let tok = l.next_token();
-        assert_eq!(tok.literal, tt.0, "Test [{}] - Token Literal is wrong", i);
-    }
-}
-
-#[test]
 fn test_let_statements() {
     struct LetTests {
         input: String,
-        expected_ident: String,
         expected_value: String,
     }
 
     let tests = vec![
         LetTests {
             input: "let x = 5;".to_string(),
-            expected_ident: "x".to_string(),
             expected_value: "5".to_string(),
         },
         LetTests {
             input: "let y = true;".to_string(),
-            expected_ident: "y".to_string(),
             expected_value: "true".to_string(),
         },
         LetTests {
             input: "let foobar = y;".to_string(),
-            expected_ident: "foobar".to_string(),
             expected_value: "y".to_string(),
         },
     ];
@@ -137,7 +89,12 @@ fn test_return_statements() {
         let program = init_program(tt.input.clone());
 
         let stmts = program.statements;
-        assert_eq!(stmts.len(), 1, "Test [{}] Statement length is wrong", tt.input);
+        assert_eq!(
+            stmts.len(),
+            1,
+            "Test [{}] Statement length is wrong",
+            tt.input
+        );
 
         let stmt = stmts.get(0).unwrap();
         assert_eq!(
