@@ -1,5 +1,6 @@
 use crate::lexer_utils::lexer::Lexer;
 use crate::parser_utils::parser::Parser;
+use crate::evaluator_utils::evaluator::eval;
 use std::io::{self, Write};
 
 pub fn start() {
@@ -24,7 +25,10 @@ pub fn start() {
             print_parse_errors(p.errors());
             continue;
         }
-        println!("{}", program.string());
+        let evaluated = eval(&program);
+        for obj in evaluated {
+            println!("{}", obj.inspect());
+        }
     }
 }
 
