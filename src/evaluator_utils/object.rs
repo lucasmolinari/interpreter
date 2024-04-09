@@ -6,6 +6,7 @@ pub enum ObjectType {
     Null,
 }
 
+#[derive(Debug)]
 pub enum Object {
     Integer(Integer),
     Boolean(Boolean),
@@ -27,19 +28,23 @@ impl Object {
         }
     }
 
-    pub fn downcast<T: Any>(self) -> T {
+    pub fn downcast<T: Any>(self) -> Option<T> {
         let obj: Box<dyn Any> = match self {
             Object::Integer(i) => Box::new(i),
             Object::Boolean(b) => Box::new(b),
             Object::Null(n) => Box::new(n),
         };
-        obj.downcast().ok().map(|x| *x).unwrap()
+        let opt = obj.downcast().ok().map(|x| *x);
+        match opt {
+            Some(x) => Some(x),
+            None => None,
+        }
     }
-
 }
 
+#[derive(Debug)]
 pub struct Integer {
-    pub value: i64
+    pub value: i64,
 }
 impl Integer {
     fn inspect(&self) -> String {
@@ -47,14 +52,18 @@ impl Integer {
     }
 }
 
+#[derive(Debug)]
+
 pub struct Boolean {
-    pub value: bool
+    pub value: bool,
 }
 impl Boolean {
     fn inspect(&self) -> String {
         self.value.to_string()
     }
 }
+
+#[derive(Debug)]
 
 pub struct Null {}
 impl Null {
@@ -64,11 +73,11 @@ impl Null {
 }
 
 fn main() {
-    let five = Object::Integer(Integer{value: 5});
-    let ten = Object::Integer(Integer{value: 10});
-    let true_obj = Object::Boolean(Boolean{value: true});
-    let false_obj = Object::Boolean(Boolean{value: false});
-    let null_obj = Object::Null(Null{});
+    let five = Object::Integer(Integer { value: 5 });
+    let ten = Object::Integer(Integer { value: 10 });
+    let true_obj = Object::Boolean(Boolean { value: true });
+    let false_obj = Object::Boolean(Boolean { value: false });
+    let null_obj = Object::Null(Null {});
 
     println!("{}", five.inspect());
     println!("{}", ten.inspect());
