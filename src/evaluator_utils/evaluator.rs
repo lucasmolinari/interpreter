@@ -1,5 +1,6 @@
-use super::object::{Integer, Null, Object};
-use crate::parser_utils::ast::{Expression, ExpressionStatement, Node, Statement, Program};
+use super::object::{Boolean, Integer, Null, Object};
+use crate::parser_utils::ast::{Expression, ExpressionStatement, Node, Program, Statement};
+
 
 pub fn eval(program: &Program) -> Vec<Object> {
     let mut results: Vec<Object> = Vec::new();
@@ -23,6 +24,7 @@ fn evaluate_statement(node: &Statement) -> Object {
 fn evaluate_expression_statement(node: &Expression) -> Object {
     match node {
         Expression::IntegerLiteral(i) => Object::Integer(Integer { value: i.value }),
+        Expression::BooleanExpression(b) => Object::Boolean(Boolean { value: b.value }),
         _ => Object::Null(Null {}),
     }
 }
