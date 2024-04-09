@@ -1,5 +1,4 @@
 use crate::lexer_utils::lexer::Lexer;
-use crate::lexer_utils::token::TokenType;
 use crate::parser_utils::parser::Parser;
 use std::io::{self, Write};
 
@@ -17,7 +16,7 @@ pub fn start() {
             std::process::exit(0);
         }
 
-        let mut l = Lexer::new(input);
+        let l = Lexer::new(input);
         let mut p = Parser::new(l);
         let program = p.parse_program();
 

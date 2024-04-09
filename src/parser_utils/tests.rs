@@ -230,7 +230,6 @@ fn test_prefix_expression() {
         operator: String,
         right: String,
         operator_token: TokenType,
-        right_token: TokenType,
     }
     let tests = vec![
         PrefixTest {
@@ -238,42 +237,36 @@ fn test_prefix_expression() {
             operator: "!".to_string(),
             right: "5".to_string(),
             operator_token: TokenType::BANG,
-            right_token: TokenType::INT,
         },
         PrefixTest {
             input: "-15;".to_string(),
             operator: "-".to_string(),
             right: "15".to_string(),
             operator_token: TokenType::MINUS,
-            right_token: TokenType::INT,
         },
         PrefixTest {
             input: "!foobar;".to_string(),
             operator: "!".to_string(),
             right: "foobar".to_string(),
             operator_token: TokenType::BANG,
-            right_token: TokenType::IDENT,
         },
         PrefixTest {
             input: "-foobar;".to_string(),
             operator: "-".to_string(),
             right: "foobar".to_string(),
             operator_token: TokenType::MINUS,
-            right_token: TokenType::IDENT,
         },
         PrefixTest {
             input: "!true;".to_string(),
             operator: "!".to_string(),
             right: "true".to_string(),
             operator_token: TokenType::BANG,
-            right_token: TokenType::TRUE,
         },
         PrefixTest {
             input: "!false;".to_string(),
             operator: "!".to_string(),
             right: "false".to_string(),
             operator_token: TokenType::BANG,
-            right_token: TokenType::FALSE,
         },
     ];
 
@@ -332,9 +325,7 @@ fn test_infix_expression() {
         left: String,
         operator: String,
         right: String,
-        left_token: TokenType,
         operator_token: TokenType,
-        right_token: TokenType,
     }
     let tests = vec![
         InfixTest {
@@ -342,99 +333,77 @@ fn test_infix_expression() {
             left: "5".to_string(),
             operator: "+".to_string(),
             right: "5".to_string(),
-            left_token: TokenType::INT,
             operator_token: TokenType::PLUS,
-            right_token: TokenType::INT,
         },
         InfixTest {
             input: "5 - 5;".to_string(),
             left: "5".to_string(),
             operator: "-".to_string(),
             right: "5".to_string(),
-            left_token: TokenType::INT,
             operator_token: TokenType::MINUS,
-            right_token: TokenType::INT,
         },
         InfixTest {
             input: "5 * 5;".to_string(),
             left: "5".to_string(),
             operator: "*".to_string(),
             right: "5".to_string(),
-            left_token: TokenType::INT,
             operator_token: TokenType::ASTERISK,
-            right_token: TokenType::INT,
         },
         InfixTest {
             input: "5 / 5;".to_string(),
             left: "5".to_string(),
             operator: "/".to_string(),
             right: "5".to_string(),
-            left_token: TokenType::INT,
             operator_token: TokenType::SLASH,
-            right_token: TokenType::INT,
         },
         InfixTest {
             input: "5 > 5;".to_string(),
             left: "5".to_string(),
             operator: ">".to_string(),
             right: "5".to_string(),
-            left_token: TokenType::INT,
             operator_token: TokenType::GT,
-            right_token: TokenType::INT,
         },
         InfixTest {
             input: "5 < 5;".to_string(),
             left: "5".to_string(),
             operator: "<".to_string(),
             right: "5".to_string(),
-            left_token: TokenType::INT,
             operator_token: TokenType::LT,
-            right_token: TokenType::INT,
         },
         InfixTest {
             input: "5 == 5;".to_string(),
             left: "5".to_string(),
             operator: "==".to_string(),
             right: "5".to_string(),
-            left_token: TokenType::INT,
             operator_token: TokenType::EQ,
-            right_token: TokenType::INT,
         },
         InfixTest {
             input: "5 != 5;".to_string(),
             left: "5".to_string(),
             operator: "!=".to_string(),
             right: "5".to_string(),
-            left_token: TokenType::INT,
             operator_token: TokenType::NOTEQ,
-            right_token: TokenType::INT,
         },
         InfixTest {
             input: "true == true;".to_string(),
             left: "true".to_string(),
             operator: "==".to_string(),
             right: "true".to_string(),
-            left_token: TokenType::TRUE,
             operator_token: TokenType::EQ,
-            right_token: TokenType::TRUE,
         },
         InfixTest {
             input: "true != false;".to_string(),
             left: "true".to_string(),
             operator: "!=".to_string(),
             right: "false".to_string(),
-            left_token: TokenType::TRUE,
             operator_token: TokenType::NOTEQ,
-            right_token: TokenType::FALSE,
         },
         InfixTest {
             input: "false == false;".to_string(),
             left: "false".to_string(),
             operator: "==".to_string(),
             right: "false".to_string(),
-            left_token: TokenType::FALSE,
             operator_token: TokenType::EQ,
-            right_token: TokenType::FALSE,
         },
     ];
 
@@ -447,8 +416,8 @@ fn test_infix_expression() {
 
         let stmt = stmts.get(0).unwrap();
         assert_eq!(
-            stmt.get_token().token_type,
-            tt.left_token,
+            stmt.get_statement_expr().expression.get_infix_expr().token.token_type,
+            tt.operator_token,
             "Test [{}] Expression Statement Token Type is wrong",
             input
         );
@@ -460,9 +429,10 @@ fn test_infix_expression() {
         );
 
         let infix_expr = stmt.get_statement_expr().expression.get_infix_expr();
+        assert_eq!(&infix_expr.operator, &tt.operator, "Operator is wrong");
+
         test_literal_expression(&infix_expr.left, &tt.left);
         test_literal_expression(&infix_expr.right, &tt.right);
-        assert_eq!(&infix_expr.operator, &tt.operator, "Operator is wrong");
     }
 }
 
