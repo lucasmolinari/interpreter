@@ -16,60 +16,60 @@ fn evaluate(input: String) -> Vec<Object> {
 
 #[test]
 fn test_eval_integer_expression() {
-    struct EvalIntTest {
+    struct EvalInt {
         input: String,
         expected: i64,
     }
     let tests = vec![
-        EvalIntTest {
+        EvalInt {
             input: "5".to_string(),
             expected: 5,
         },
-        EvalIntTest {
+        EvalInt {
             input: "10".to_string(),
             expected: 10,
         },
-        EvalIntTest {
+        EvalInt {
             input: "-5".to_string(),
             expected: -5,
         },
-        EvalIntTest {
+        EvalInt {
             input: "-10".to_string(),
             expected: -10,
         },
-        EvalIntTest {
+        EvalInt {
             input: "5 + 5 + 5 + 5 - 10".to_string(),
             expected: 10,
         },
-        EvalIntTest {
+        EvalInt {
             input: "2 * 2 * 2 * 2 * 2".to_string(),
             expected: 32,
         },
-        EvalIntTest {
+        EvalInt {
             input: "-50 + 100 + -50".to_string(),
             expected: 0,
         },
-        EvalIntTest {
+        EvalInt {
             input: "5 * 2 + 10".to_string(),
             expected: 20,
         },
-        EvalIntTest {
+        EvalInt {
             input: "5 + 2 * 10".to_string(),
             expected: 25,
         },
-        EvalIntTest {
+        EvalInt {
             input: "20 + 2 * -10".to_string(),
             expected: 0,
         },
-        EvalIntTest {
+        EvalInt {
             input: "50 / 2 * 2 + 10".to_string(),
             expected: 60,
         },
-        EvalIntTest {
+        EvalInt {
             input: "2 * (5 + 10)".to_string(),
             expected: 30,
         },
-        EvalIntTest {
+        EvalInt {
             input: "(5 + 10 * 2 + 15 / 3) * 2 + -10".to_string(),
             expected: 50,
         },
@@ -85,84 +85,84 @@ fn test_eval_integer_expression() {
 
 #[test]
 fn test_eval_boolean_expression() {
-    struct EvalBooleanTest {
+    struct EvalBoolean {
         input: String,
         expected: bool,
     }
     let tests = vec![
-        EvalBooleanTest {
+        EvalBoolean {
             input: "true".to_string(),
             expected: true,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "false".to_string(),
             expected: false,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "1 < 2".to_string(),
             expected: true,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "1 > 2".to_string(),
             expected: false,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "1 < 1".to_string(),
             expected: false,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "1 > 1".to_string(),
             expected: false,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "1 == 1".to_string(),
             expected: true,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "1 != 1".to_string(),
             expected: false,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "1 == 2".to_string(),
             expected: false,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "1 != 2".to_string(),
             expected: true,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "true == true".to_string(),
             expected: true,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "false == false".to_string(),
             expected: true,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "true == false".to_string(),
             expected: false,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "true != false".to_string(),
             expected: true,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "false != true".to_string(),
             expected: true,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "(1 < 2) == true".to_string(),
             expected: true,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "(1 < 2) == false".to_string(),
             expected: false,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "(1 > 2) == true".to_string(),
             expected: false,
         },
-        EvalBooleanTest {
+        EvalBoolean {
             input: "(1 > 2) == false".to_string(),
             expected: true,
         },
