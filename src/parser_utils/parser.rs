@@ -243,7 +243,6 @@ impl Parser {
     fn parse_infix_expression(&mut self, expr: Expression) -> Result<Expression, String> {
         self.next_token();
         let token = self.cur_token.clone();
-        dbg!(&token);
         let operator = self.cur_token.literal.clone();
         let left = expr;
         let precedence = self.cur_precedence();

@@ -37,6 +37,42 @@ fn test_eval_integer_expression() {
             input: "-10".to_string(),
             expected: -10,
         },
+        EvalIntTest {
+            input: "5 + 5 + 5 + 5 - 10".to_string(),
+            expected: 10,
+        },
+        EvalIntTest {
+            input: "2 * 2 * 2 * 2 * 2".to_string(),
+            expected: 32,
+        },
+        EvalIntTest {
+            input: "-50 + 100 + -50".to_string(),
+            expected: 0,
+        },
+        EvalIntTest {
+            input: "5 * 2 + 10".to_string(),
+            expected: 20,
+        },
+        EvalIntTest {
+            input: "5 + 2 * 10".to_string(),
+            expected: 25,
+        },
+        EvalIntTest {
+            input: "20 + 2 * -10".to_string(),
+            expected: 0,
+        },
+        EvalIntTest {
+            input: "50 / 2 * 2 + 10".to_string(),
+            expected: 60,
+        },
+        EvalIntTest {
+            input: "2 * (5 + 10)".to_string(),
+            expected: 30,
+        },
+        EvalIntTest {
+            input: "(5 + 10 * 2 + 15 / 3) * 2 + -10".to_string(),
+            expected: 50,
+        },
     ];
 
     for tt in tests {

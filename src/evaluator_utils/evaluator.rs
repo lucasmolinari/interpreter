@@ -1,4 +1,4 @@
-use super::object::{Boolean, Integer, Null, Object};
+use super::object::{Boolean, Integer, Null, Object, ObjectType};
 use crate::parser_utils::ast::{Expression, ExpressionStatement, Node, Program, Statement};
 
 pub fn eval(program: &Program) -> Vec<Object> {
@@ -27,6 +27,11 @@ fn evaluate_expression_statement(node: &Expression) -> Object {
         Expression::PrefixExpression(p) => {
             let right = evaluate_expression_statement(&p.right);
             eval_prefix_expression(&p.operator, right)
+        }
+        Expression::InfixExpression(ie) => {
+            let left = evaluate_expression_statement(&ie.left);
+            let right = evaluate_expression_statement(&ie.right);
+            eval_infix_expression(&ie.operator, left, right)
         }
         _ => Object::Null(Null {}),
     }
@@ -58,6 +63,35 @@ fn eval_bang_prefix_operator_expression(right: Object) -> Object {
 fn eval_minus_prefix_operator_expression(right: Object) -> Object {
     match right {
         Object::Integer(i) => Object::Integer(Integer { value: -i.value }),
+        _ => Object::Null(Null {}),
+    }
+}
+
+fn eval_infix_expression(operator: &String, left: Object, right: Object) -> Object {
+    match (left.object_type(), right.object_type()) {
+        (ObjectType::Integer, ObjectType::Integer) => eval_integer_infix_expression(
+            operator,
+            left.downcast().unwrap(),
+            right.downcast().unwrap(),
+        ),
+        _ => Object::Null(Null {}),
+    }
+}
+
+fn eval_integer_infix_expression(operator: &String, left: Integer, right: Integer) -> Object {
+    match operator.as_str() {
+        "+" => Object::Integer(Integer {
+            value: left.value + right.value,
+        }),
+        "-" => Object::Integer(Integer {
+            value: left.value - right.value,
+        }),
+        "*" => Object::Integer(Integer {
+            value: left.value * right.value,
+        }),
+        "/" => Object::Integer(Integer {
+            value: left.value / right.value,
+        }),
         _ => Object::Null(Null {}),
     }
 }
