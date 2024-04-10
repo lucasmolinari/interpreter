@@ -1,16 +1,18 @@
 use super::object::{Boolean, Integer, Null, Object, ObjectType};
-use crate::parser_utils::ast::{Expression, ExpressionStatement, Node, Program, Statement};
+use crate::parser_utils::ast::{
+    Expression, ExpressionStatement, IfExpression, Node, Program, Statement,
+};
 
-pub fn eval(program: &Program) -> Vec<Object> {
-    let mut results: Vec<Object> = Vec::new();
-    for stmt in &program.statements {
+pub fn eval(statements: &Vec<Node>) -> Object {
+    let mut result: Object = Object::Null(Null {});
+    for stmt in statements {
         let obj: Object = match stmt {
             Node::Statement(stmt) => evaluate_statement(stmt),
             _ => Object::Null(Null {}),
         };
-        results.push(obj);
+        result = obj;
     }
-    results
+    result
 }
 
 fn evaluate_statement(node: &Statement) -> Object {
@@ -33,6 +35,8 @@ fn evaluate_expression_statement(node: &Expression) -> Object {
             let right = evaluate_expression_statement(&ie.right);
             eval_infix_expression(&ie.operator, left, right)
         }
+        Expression::BlockStatement(bs) => eval(&bs.statements),
+        Expression::IfExpression(ie) => eval_if_else_expression(&ie),
         _ => Object::Null(Null {}),
     }
 }
@@ -73,7 +77,7 @@ fn eval_infix_expression(operator: &String, left: Object, right: Object) -> Obje
             operator,
             left.downcast().unwrap(),
             right.downcast().unwrap(),
-        )
+        );
     }
     match operator.as_str() {
         "==" => Object::Boolean(Boolean {
@@ -113,5 +117,26 @@ fn eval_integer_infix_expression(operator: &String, left: Integer, right: Intege
             value: left.value != right.value,
         }),
         _ => Object::Null(Null {}),
+    }
+}
+
+fn eval_if_else_expression(ie: &IfExpression) -> Object {
+    let condition = evaluate_expression_statement(&ie.condition);
+    let alternative = &ie.alternative;
+    
+    if is_truthy(condition) {
+        eval(&ie.consequence.statements)
+    } else if alternative.is_some() {
+        eval(&ie.alternative.as_ref().unwrap().statements)
+    } else {
+        Object::Null(Null {})
+    }
+}
+
+fn is_truthy(obj: Object) -> bool {
+    match obj {
+        Object::Null(_) => false,
+        Object::Boolean(b) => b.value,
+        _ => true,
     }
 }

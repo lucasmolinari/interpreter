@@ -25,10 +25,8 @@ pub fn start() {
             print_parse_errors(p.errors());
             continue;
         }
-        let evaluated = eval(&program);
-        for obj in evaluated {
-            println!("{}", obj.inspect());
-        }
+        let evaluated = eval(&program.statements);
+        println!("{}", evaluated.inspect());
     }
 }
 

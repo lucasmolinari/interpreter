@@ -5,13 +5,13 @@ use crate::lexer_utils::lexer::Lexer;
 use crate::parser_utils::parser::Parser;
 
 use super::evaluator::eval;
-use super::object::{Boolean, Integer, Object};
+use super::object::{Boolean, Integer, Null, Object};
 
-fn evaluate(input: String) -> Vec<Object> {
+fn evaluate(input: String) -> Object {
     let l = Lexer::new(input);
     let mut p = Parser::new(l);
     let program = p.parse_program();
-    eval(&program)
+    eval(&program.statements)
 }
 
 #[test]
@@ -77,9 +77,7 @@ fn test_eval_integer_expression() {
 
     for tt in tests {
         let res = evaluate(tt.input.clone());
-        for obj in res {
-            test_integer_object(obj, tt.expected)
-        }
+        test_integer_object(res, tt.expected)
     }
 }
 
@@ -170,9 +168,7 @@ fn test_eval_boolean_expression() {
 
     for tt in tests {
         let res = evaluate(tt.input.clone());
-        for obj in res {
-            test_boolean_object(obj, tt.expected)
-        }
+        test_boolean_object(res, tt.expected)
     }
 }
 
@@ -212,8 +208,52 @@ fn test_eval_bang_prefix() {
 
     for tt in tests {
         let res = evaluate(tt.input.clone());
-        for obj in res {
-            test_boolean_object(obj, tt.expected)
+        test_boolean_object(res, tt.expected)
+    }
+}
+
+#[test]
+fn test_eval_if_else_expression() {
+    struct EvalIfElse {
+        input: String,
+        expected: Result<i64, Null>,
+    }
+    let tests = vec![
+        EvalIfElse {
+            input: "if (true) { 10 }".to_string(),
+            expected: Ok(10),
+        },
+        EvalIfElse {
+            input: "if (false) { 10 }".to_string(),
+            expected: Err(Null {}),
+        },
+        EvalIfElse {
+            input: "if (1) { 10 }".to_string(),
+            expected: Ok(10),
+        },
+        EvalIfElse {
+            input: "if (1 < 2) { 10 }".to_string(),
+            expected: Ok(10),
+        },
+        EvalIfElse {
+            input: "if (1 > 2) { 10 }".to_string(),
+            expected: Err(Null {}),
+        },
+        EvalIfElse {
+            input: "if (1 > 2) { 10 } else { 20 }".to_string(),
+            expected: Ok(20),
+        },
+        EvalIfElse {
+            input: "if (1 < 2) { 10 } else { 20 }".to_string(),
+            expected: Ok(10),
+        },
+    ];
+
+    for tt in tests {
+        let res = evaluate(tt.input.clone());
+        match tt.expected {
+            Ok(x) => test_integer_object(res, x),
+            Err(_) => test_null_object(res),
         }
     }
 }
@@ -242,4 +282,12 @@ fn test_boolean_object(object: Object, expected: bool) {
         "Test [{}] - Boolean Object has wrong value. Got {}, Expected {}",
         inspect, obj.value, expected
     );
+}
+
+fn test_null_object(object: Object) {
+    let inspect = &object.inspect();
+    let obj: Null = match object.downcast() {
+        Some(x) => x,
+        None => panic!("Could not downcast {} to Null", inspect),
+    };
 }
