@@ -68,12 +68,20 @@ fn eval_minus_prefix_operator_expression(right: Object) -> Object {
 }
 
 fn eval_infix_expression(operator: &String, left: Object, right: Object) -> Object {
-    match (left.object_type(), right.object_type()) {
-        (ObjectType::Integer, ObjectType::Integer) => eval_integer_infix_expression(
+    if (left.object_type() == ObjectType::Integer && right.object_type() == ObjectType::Integer) {
+        return eval_integer_infix_expression(
             operator,
             left.downcast().unwrap(),
             right.downcast().unwrap(),
-        ),
+        )
+    }
+    match operator.as_str() {
+        "==" => Object::Boolean(Boolean {
+            value: left == right,
+        }),
+        "!=" => Object::Boolean(Boolean {
+            value: left != right,
+        }),
         _ => Object::Null(Null {}),
     }
 }

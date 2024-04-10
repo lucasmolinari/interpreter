@@ -1,12 +1,13 @@
 use std::any::Any;
 
+#[derive(Debug, PartialEq)]
 pub enum ObjectType {
     Integer,
     Boolean,
     Null,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Object {
     Integer(Integer),
     Boolean(Boolean),
@@ -42,7 +43,7 @@ impl Object {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Integer {
     pub value: i64,
 }
@@ -52,7 +53,7 @@ impl Integer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 
 pub struct Boolean {
     pub value: bool,
@@ -63,7 +64,7 @@ impl Boolean {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 
 pub struct Null {}
 impl Null {
