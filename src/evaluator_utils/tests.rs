@@ -98,6 +98,38 @@ fn test_eval_boolean_expression() {
             input: "false".to_string(),
             expected: false,
         },
+        EvalBooleanTest {
+            input: "1 < 2".to_string(),
+            expected: true,
+        },
+        EvalBooleanTest {
+            input: "1 > 2".to_string(),
+            expected: false,
+        },
+        EvalBooleanTest {
+            input: "1 < 1".to_string(),
+            expected: false,
+        },
+        EvalBooleanTest {
+            input: "1 > 1".to_string(),
+            expected: false,
+        },
+        EvalBooleanTest {
+            input: "1 == 1".to_string(),
+            expected: true,
+        },
+        EvalBooleanTest {
+            input: "1 != 1".to_string(),
+            expected: false,
+        },
+        EvalBooleanTest {
+            input: "1 == 2".to_string(),
+            expected: false,
+        },
+        EvalBooleanTest {
+            input: "1 != 2".to_string(),
+            expected: true,
+        },
     ];
 
     for tt in tests {

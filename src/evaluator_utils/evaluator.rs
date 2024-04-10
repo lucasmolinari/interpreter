@@ -92,6 +92,18 @@ fn eval_integer_infix_expression(operator: &String, left: Integer, right: Intege
         "/" => Object::Integer(Integer {
             value: left.value / right.value,
         }),
+        "<" => Object::Boolean(Boolean {
+            value: left.value < right.value,
+        }),
+        ">" => Object::Boolean(Boolean {
+            value: left.value > right.value,
+        }),
+        "==" => Object::Boolean(Boolean {
+            value: left.value == right.value,
+        }),
+        "!=" => Object::Boolean(Boolean {
+            value: left.value != right.value,
+        }),
         _ => Object::Null(Null {}),
     }
 }
