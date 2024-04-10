@@ -4,13 +4,15 @@ use std::any::Any;
 pub enum ObjectType {
     Integer,
     Boolean,
+    Return,
     Null,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     Integer(Integer),
     Boolean(Boolean),
+    Return(Return),
     Null(Null),
 }
 impl Object {
@@ -18,6 +20,7 @@ impl Object {
         match self {
             Object::Integer(_) => ObjectType::Integer,
             Object::Boolean(_) => ObjectType::Boolean,
+            Object::Return(_) => ObjectType::Return,
             Object::Null(_) => ObjectType::Null,
         }
     }
@@ -25,6 +28,7 @@ impl Object {
         match self {
             Object::Integer(i) => i.inspect(),
             Object::Boolean(b) => b.inspect(),
+            Object::Return(r) => r.inspect(),
             Object::Null(n) => n.inspect(),
         }
     }
@@ -33,6 +37,7 @@ impl Object {
         let obj: Box<dyn Any> = match self {
             Object::Integer(i) => Box::new(i),
             Object::Boolean(b) => Box::new(b),
+            Object::Return(r) => Box::new(r),
             Object::Null(n) => Box::new(n),
         };
         let opt = obj.downcast().ok().map(|x| *x);
@@ -41,9 +46,16 @@ impl Object {
             None => None,
         }
     }
+
+    pub fn get_return_value(&self) -> Object {
+        match self {
+            Object::Return(r) => *r.value.clone(),
+            _ => panic!("Expected ReturnObject, got {:?}", self.inspect()),
+        }
+    }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Integer {
     pub value: i64,
 }
@@ -53,8 +65,7 @@ impl Integer {
     }
 }
 
-#[derive(Debug, PartialEq)]
-
+#[derive(Debug, Clone, PartialEq)]
 pub struct Boolean {
     pub value: bool,
 }
@@ -64,8 +75,17 @@ impl Boolean {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
+pub struct Return {
+    pub value: Box<Object>,
+}
+impl Return {
+    fn inspect(&self) -> String {
+        self.value.inspect()
+    }
+}
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Null {}
 impl Null {
     fn inspect(&self) -> String {

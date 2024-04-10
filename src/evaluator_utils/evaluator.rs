@@ -1,6 +1,6 @@
-use super::object::{Boolean, Integer, Null, Object, ObjectType};
+use super::object::{Boolean, Integer, Null, Object, ObjectType, Return};
 use crate::parser_utils::ast::{
-    Expression, ExpressionStatement, IfExpression, Node, Program, Statement,
+    Expression, ExpressionStatement, IfExpression, Node, Program, ReturnStatement, Statement, BlockStatement
 };
 
 pub fn eval(statements: &Vec<Node>) -> Object {
@@ -10,6 +10,24 @@ pub fn eval(statements: &Vec<Node>) -> Object {
             Node::Statement(stmt) => evaluate_statement(stmt),
             _ => Object::Null(Null {}),
         };
+        if obj.object_type() == ObjectType::Return {
+            return obj.get_return_value();
+        }
+        result = obj;
+    }
+    result
+}
+
+fn evaluate_block_statement(node: &BlockStatement) -> Object {
+    let mut result: Object = Object::Null(Null {});
+    for stmt in &node.statements {
+        let obj: Object = match stmt {
+            Node::Statement(stmt) => evaluate_statement(stmt),
+            _ => Object::Null(Null {}),
+        };
+        if obj.object_type() == ObjectType::Return {
+            return obj;
+        }
         result = obj;
     }
     result
@@ -17,7 +35,8 @@ pub fn eval(statements: &Vec<Node>) -> Object {
 
 fn evaluate_statement(node: &Statement) -> Object {
     match node {
-        Statement::ExpressionStatement(expr) => evaluate_expression_statement(&*expr.expression),
+        Statement::ExpressionStatement(expr) => evaluate_expression_statement(&expr.expression),
+        Statement::ReturnStatement(rs) => eval_return_statement(rs),
         _ => Object::Null(Null {}),
     }
 }
@@ -35,7 +54,7 @@ fn evaluate_expression_statement(node: &Expression) -> Object {
             let right = evaluate_expression_statement(&ie.right);
             eval_infix_expression(&ie.operator, left, right)
         }
-        Expression::BlockStatement(bs) => eval(&bs.statements),
+        Expression::BlockStatement(bs) => evaluate_block_statement(&bs),
         Expression::IfExpression(ie) => eval_if_else_expression(&ie),
         _ => Object::Null(Null {}),
     }
@@ -72,7 +91,7 @@ fn eval_minus_prefix_operator_expression(right: Object) -> Object {
 }
 
 fn eval_infix_expression(operator: &String, left: Object, right: Object) -> Object {
-    if (left.object_type() == ObjectType::Integer && right.object_type() == ObjectType::Integer) {
+    if left.object_type() == ObjectType::Integer && right.object_type() == ObjectType::Integer {
         return eval_integer_infix_expression(
             operator,
             left.downcast().unwrap(),
@@ -123,11 +142,11 @@ fn eval_integer_infix_expression(operator: &String, left: Integer, right: Intege
 fn eval_if_else_expression(ie: &IfExpression) -> Object {
     let condition = evaluate_expression_statement(&ie.condition);
     let alternative = &ie.alternative;
-    
+
     if is_truthy(condition) {
-        eval(&ie.consequence.statements)
+        evaluate_block_statement(&ie.consequence)
     } else if alternative.is_some() {
-        eval(&ie.alternative.as_ref().unwrap().statements)
+        evaluate_block_statement(&ie.alternative.as_ref().unwrap())
     } else {
         Object::Null(Null {})
     }
@@ -139,4 +158,9 @@ fn is_truthy(obj: Object) -> bool {
         Object::Boolean(b) => b.value,
         _ => true,
     }
+}
+
+fn eval_return_statement(rs: &ReturnStatement) -> Object {
+    let val = evaluate_expression_statement(&rs.return_value);
+    Object::Return(Return { value: Box::new(val) })
 }

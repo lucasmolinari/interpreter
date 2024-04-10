@@ -258,11 +258,47 @@ fn test_eval_if_else_expression() {
     }
 }
 
+#[test]
+fn test_eval_return_statement() {
+    struct EvalReturn {
+        input: String,
+        expected: i64,
+    }
+    let tests = vec![
+        EvalReturn {
+            input: "return 10;".to_string(),
+            expected: 10,
+        },
+        EvalReturn {
+            input: "return 10; 9;".to_string(),
+            expected: 10,
+        },
+        EvalReturn {
+            input: "return 2 * 5; 9;".to_string(),
+            expected: 10,
+        },
+        EvalReturn {
+            input: "9; return 2 * 5; 20;".to_string(),
+            expected: 10,
+        },
+        EvalReturn {
+            input: "if (10 > 1) { if (10 > 1) { return 10; } return 1; }".to_string(),
+            expected: 10,
+        },
+    ];
+
+    for tt in tests {
+        let res = evaluate(tt.input.clone());
+        test_integer_object(res, tt.expected)
+    }
+}
+
 fn test_integer_object(object: Object, expected: i64) {
+    let obj_type = &object.object_type();
     let inspect = &object.inspect();
     let obj: Integer = match object.downcast() {
         Some(x) => x,
-        None => panic!("Could not downcast {} to Integer", inspect),
+        None => panic!("Could not downcast {:?} to Integer", obj_type),
     };
     assert_eq!(
         obj.value, expected,
@@ -272,10 +308,11 @@ fn test_integer_object(object: Object, expected: i64) {
 }
 
 fn test_boolean_object(object: Object, expected: bool) {
+    let obj_type = &object.object_type();
     let inspect = &object.inspect();
     let obj: Boolean = match object.downcast() {
         Some(x) => x,
-        None => panic!("Could not downcast {} to Boolean", inspect),
+        None => panic!("Could not downcast {:?} to Boolean", obj_type),
     };
     assert_eq!(
         obj.value, expected,
@@ -285,9 +322,10 @@ fn test_boolean_object(object: Object, expected: bool) {
 }
 
 fn test_null_object(object: Object) {
+    let obj_type = &object.object_type();
     let inspect = &object.inspect();
     let obj: Null = match object.downcast() {
         Some(x) => x,
-        None => panic!("Could not downcast {} to Null", inspect),
+        None => panic!("Could not downcast {:?} to Null", obj_type),
     };
 }
