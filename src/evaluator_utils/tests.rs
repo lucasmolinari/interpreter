@@ -1,11 +1,12 @@
 use core::panic;
 use std::vec;
 
+use crate::evaluator_utils::object::ObjectType;
 use crate::lexer_utils::lexer::Lexer;
 use crate::parser_utils::parser::Parser;
 
 use super::evaluator::eval;
-use super::object::{Boolean, Integer, Null, Object};
+use super::object::{Boolean, Integer, Null, Object, Error};
 
 fn evaluate(input: String) -> Object {
     let l = Lexer::new(input);
@@ -291,6 +292,51 @@ fn test_eval_return_statement() {
         let res = evaluate(tt.input.clone());
         test_integer_object(res, tt.expected)
     }
+}
+
+#[test]
+fn test_error_handling(){
+    struct ErrorHandling {
+        input: String, 
+        expected: String
+    }
+    let tests = vec![
+        ErrorHandling {
+            input: "5 + true;".to_string(),
+            expected: "Type mismatch: Integer + Boolean".to_string()
+        },
+        ErrorHandling {
+            input: "5 + true; 5;".to_string(),
+            expected: "Type mismatch: Integer + Boolean".to_string()
+        },
+        ErrorHandling {
+            input: "-true".to_string(),
+            expected: "Unknown operator: -Boolean".to_string()
+        },
+        ErrorHandling {
+            input: "true + false;".to_string(),
+            expected: "Unknown operator: Boolean + Boolean".to_string()
+        },
+        ErrorHandling {
+            input: "5; true + false; 5".to_string(),
+            expected: "Unknown operator: Boolean + Boolean".to_string()
+        },
+        ErrorHandling {
+            input: "if (10 > 1) { true + false; }".to_string(),
+            expected: "Unknown operator: Boolean + Boolean".to_string()
+        },
+        ErrorHandling {
+            input: "if (10 > 1) { if (10 > 1) { return true + false; } return 1; }".to_string(),
+            expected: "Unknown operator: Boolean + Boolean".to_string()
+        },
+    ];
+
+    for tt in tests {
+        let evaluated = evaluate(tt.input.clone());
+        assert_eq!(evaluated.object_type(), ObjectType::Error, "No error object returned");
+        assert_eq!(evaluated.inspect(), tt.expected, "Wrong error message");
+    }
+
 }
 
 fn test_integer_object(object: Object, expected: i64) {

@@ -1,6 +1,7 @@
-use super::object::{Boolean, Integer, Null, Object, ObjectType, Return};
+use super::object::{Boolean, Error, Integer, Null, Object, ObjectType, Return};
 use crate::parser_utils::ast::{
-    Expression, ExpressionStatement, IfExpression, Node, Program, ReturnStatement, Statement, BlockStatement
+    BlockStatement, Expression, ExpressionStatement, IfExpression, Node, Program, ReturnStatement,
+    Statement,
 };
 
 pub fn eval(statements: &Vec<Node>) -> Object {
@@ -12,6 +13,9 @@ pub fn eval(statements: &Vec<Node>) -> Object {
         };
         if obj.object_type() == ObjectType::Return {
             return obj.get_return_value();
+        } 
+        if obj.object_type() == ObjectType::Error {
+            return obj;
         }
         result = obj;
     }
@@ -25,9 +29,9 @@ fn evaluate_block_statement(node: &BlockStatement) -> Object {
             Node::Statement(stmt) => evaluate_statement(stmt),
             _ => Object::Null(Null {}),
         };
-        if obj.object_type() == ObjectType::Return {
+        if obj.object_type() == ObjectType::Return || obj.object_type() == ObjectType::Error{
             return obj;
-        }
+        } 
         result = obj;
     }
     result
@@ -56,7 +60,7 @@ fn evaluate_expression_statement(node: &Expression) -> Object {
         }
         Expression::BlockStatement(bs) => evaluate_block_statement(&bs),
         Expression::IfExpression(ie) => eval_if_else_expression(&ie),
-        _ => Object::Null(Null {}),
+        _ => new_error(format!("Unknown expression: {:?}", node)),
     }
 }
 
@@ -64,7 +68,7 @@ fn eval_prefix_expression(operator: &String, right: Object) -> Object {
     match operator.as_str() {
         "!" => eval_bang_prefix_operator_expression(right),
         "-" => eval_minus_prefix_operator_expression(right),
-        _ => Object::Null(Null {}),
+        _ => new_error(format!("Unknown operator: {}{:?}", operator, right.object_type())),
     }
 }
 
@@ -79,14 +83,14 @@ fn eval_bang_prefix_operator_expression(right: Object) -> Object {
         }
         Object::Integer(_) => Object::Boolean(Boolean { value: false }),
         Object::Null(_) => Object::Boolean(Boolean { value: true }),
-        _ => Object::Null(Null {}),
+        _ => new_error(format!("Unknown operator: !{:?}", right.object_type())),
     }
 }
 
 fn eval_minus_prefix_operator_expression(right: Object) -> Object {
     match right {
         Object::Integer(i) => Object::Integer(Integer { value: -i.value }),
-        _ => Object::Null(Null {}),
+        _ => new_error(format!("Unknown operator: -{:?}", right.object_type())),
     }
 }
 
@@ -98,6 +102,14 @@ fn eval_infix_expression(operator: &String, left: Object, right: Object) -> Obje
             right.downcast().unwrap(),
         );
     }
+    if left.object_type() != right.object_type() {
+        return new_error(format!(
+            "Type mismatch: {:?} {} {:?}",
+            left.object_type(),
+            operator,
+            right.object_type()
+        ));
+    }
     match operator.as_str() {
         "==" => Object::Boolean(Boolean {
             value: left == right,
@@ -105,7 +117,12 @@ fn eval_infix_expression(operator: &String, left: Object, right: Object) -> Obje
         "!=" => Object::Boolean(Boolean {
             value: left != right,
         }),
-        _ => Object::Null(Null {}),
+        _ => new_error(format!(
+            "Unknown operator: {:?} {} {:?}",
+            left.object_type(),
+            operator,
+            right.object_type()
+        )), 
     }
 }
 
@@ -135,7 +152,12 @@ fn eval_integer_infix_expression(operator: &String, left: Integer, right: Intege
         "!=" => Object::Boolean(Boolean {
             value: left.value != right.value,
         }),
-        _ => Object::Null(Null {}),
+        _ => new_error(format!(
+            "Unknown operator: {:?} {} {:?}",
+            left.object_type(),
+            operator,
+            right.object_type(),
+        )),
     }
 }
 
@@ -154,13 +176,19 @@ fn eval_if_else_expression(ie: &IfExpression) -> Object {
 
 fn is_truthy(obj: Object) -> bool {
     match obj {
-        Object::Null(_) => false,
         Object::Boolean(b) => b.value,
+        Object::Null(_) => false,
         _ => true,
     }
 }
 
 fn eval_return_statement(rs: &ReturnStatement) -> Object {
     let val = evaluate_expression_statement(&rs.return_value);
-    Object::Return(Return { value: Box::new(val) })
+    Object::Return(Return {
+        value: Box::new(val),
+    })
+}
+
+fn new_error(msg: String) -> Object {
+    Object::Error(Error { message: msg })
 }

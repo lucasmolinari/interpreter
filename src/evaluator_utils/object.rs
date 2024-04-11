@@ -6,6 +6,7 @@ pub enum ObjectType {
     Boolean,
     Return,
     Null,
+    Error,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -14,14 +15,16 @@ pub enum Object {
     Boolean(Boolean),
     Return(Return),
     Null(Null),
+    Error(Error),
 }
 impl Object {
     pub fn object_type(&self) -> ObjectType {
         match self {
-            Object::Integer(_) => ObjectType::Integer,
-            Object::Boolean(_) => ObjectType::Boolean,
-            Object::Return(_) => ObjectType::Return,
-            Object::Null(_) => ObjectType::Null,
+            Object::Integer(i) => i.object_type(),
+            Object::Boolean(b) => b.object_type(),
+            Object::Return(r) => r.object_type(),
+            Object::Null(n) => n.object_type(),
+            Object::Error(e) => e.object_type(),
         }
     }
     pub fn inspect(&self) -> String {
@@ -30,6 +33,7 @@ impl Object {
             Object::Boolean(b) => b.inspect(),
             Object::Return(r) => r.inspect(),
             Object::Null(n) => n.inspect(),
+            Object::Error(e) => e.inspect(),
         }
     }
 
@@ -39,6 +43,7 @@ impl Object {
             Object::Boolean(b) => Box::new(b),
             Object::Return(r) => Box::new(r),
             Object::Null(n) => Box::new(n),
+            Object::Error(e) => Box::new(e),
         };
         let opt = obj.downcast().ok().map(|x| *x);
         match opt {
@@ -63,6 +68,9 @@ impl Integer {
     fn inspect(&self) -> String {
         self.value.to_string()
     }
+    pub fn object_type(&self) -> ObjectType {
+        ObjectType::Integer
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -72,6 +80,9 @@ pub struct Boolean {
 impl Boolean {
     fn inspect(&self) -> String {
         self.value.to_string()
+    }
+    pub fn object_type(&self) -> ObjectType {
+        ObjectType::Boolean
     }
 }
 
@@ -83,6 +94,9 @@ impl Return {
     fn inspect(&self) -> String {
         self.value.inspect()
     }
+    pub fn object_type(&self) -> ObjectType {
+        ObjectType::Return
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -90,6 +104,23 @@ pub struct Null {}
 impl Null {
     fn inspect(&self) -> String {
         "null".to_string()
+    }
+    pub fn object_type(&self) -> ObjectType {
+        ObjectType::Null
+    
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Error {
+    pub message: String,
+}
+impl Error {
+    fn inspect(&self) -> String {
+        self.message.clone()
+    }
+    pub fn object_type(&self) -> ObjectType {
+        ObjectType::Error
     }
 }
 
