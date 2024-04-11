@@ -13,7 +13,7 @@ pub fn eval(statements: &Vec<Node>) -> Object {
         };
         if obj.object_type() == ObjectType::Return {
             return obj.get_return_value();
-        } 
+        }
         if obj.object_type() == ObjectType::Error {
             return obj;
         }
@@ -29,9 +29,9 @@ fn evaluate_block_statement(node: &BlockStatement) -> Object {
             Node::Statement(stmt) => evaluate_statement(stmt),
             _ => Object::Null(Null {}),
         };
-        if obj.object_type() == ObjectType::Return || obj.object_type() == ObjectType::Error{
+        if obj.object_type() == ObjectType::Return || obj.object_type() == ObjectType::Error {
             return obj;
-        } 
+        }
         result = obj;
     }
     result
@@ -65,10 +65,17 @@ fn evaluate_expression_statement(node: &Expression) -> Object {
 }
 
 fn eval_prefix_expression(operator: &String, right: Object) -> Object {
+    if is_error(&right) {
+        return right;
+    }
     match operator.as_str() {
         "!" => eval_bang_prefix_operator_expression(right),
         "-" => eval_minus_prefix_operator_expression(right),
-        _ => new_error(format!("Unknown operator: {}{:?}", operator, right.object_type())),
+        _ => new_error(format!(
+            "Unknown operator: {}{:?}",
+            operator,
+            right.object_type()
+        )),
     }
 }
 
@@ -95,6 +102,13 @@ fn eval_minus_prefix_operator_expression(right: Object) -> Object {
 }
 
 fn eval_infix_expression(operator: &String, left: Object, right: Object) -> Object {
+    if is_error(&left) {
+        return left;
+    }
+    if is_error(&right) {
+        return right;
+    }
+
     if left.object_type() == ObjectType::Integer && right.object_type() == ObjectType::Integer {
         return eval_integer_infix_expression(
             operator,
@@ -122,7 +136,7 @@ fn eval_infix_expression(operator: &String, left: Object, right: Object) -> Obje
             left.object_type(),
             operator,
             right.object_type()
-        )), 
+        )),
     }
 }
 
@@ -163,6 +177,9 @@ fn eval_integer_infix_expression(operator: &String, left: Integer, right: Intege
 
 fn eval_if_else_expression(ie: &IfExpression) -> Object {
     let condition = evaluate_expression_statement(&ie.condition);
+    if is_error(&condition) {
+        return condition;
+    }
     let alternative = &ie.alternative;
 
     if is_truthy(condition) {
@@ -184,6 +201,9 @@ fn is_truthy(obj: Object) -> bool {
 
 fn eval_return_statement(rs: &ReturnStatement) -> Object {
     let val = evaluate_expression_statement(&rs.return_value);
+    if is_error(&val) {
+        return val;
+    }
     Object::Return(Return {
         value: Box::new(val),
     })
@@ -191,4 +211,8 @@ fn eval_return_statement(rs: &ReturnStatement) -> Object {
 
 fn new_error(msg: String) -> Object {
     Object::Error(Error { message: msg })
+}
+
+fn is_error(obj: &Object) -> bool {
+    obj.object_type() == ObjectType::Error
 }
