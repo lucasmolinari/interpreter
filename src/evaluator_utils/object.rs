@@ -1,10 +1,15 @@
 use std::any::Any;
 
+use crate::parser_utils::ast::BlockStatement;
+
+use super::environment::Environment;
+
 #[derive(Debug, PartialEq)]
 pub enum ObjectType {
     Integer,
     Boolean,
     Return,
+    Function,
     Null,
     Error,
 }
@@ -14,6 +19,7 @@ pub enum Object {
     Integer(Integer),
     Boolean(Boolean),
     Return(Return),
+    Function(Function),
     Null(Null),
     Error(Error),
 }
@@ -23,6 +29,7 @@ impl Object {
             Object::Integer(i) => i.object_type(),
             Object::Boolean(b) => b.object_type(),
             Object::Return(r) => r.object_type(),
+            Object::Function(f) => f.object_type(),
             Object::Null(n) => n.object_type(),
             Object::Error(e) => e.object_type(),
         }
@@ -32,6 +39,7 @@ impl Object {
             Object::Integer(i) => i.inspect(),
             Object::Boolean(b) => b.inspect(),
             Object::Return(r) => r.inspect(),
+            Object::Function(f) => f.inspect(),
             Object::Null(n) => n.inspect(),
             Object::Error(e) => e.inspect(),
         }
@@ -42,6 +50,7 @@ impl Object {
             Object::Integer(i) => Box::new(i),
             Object::Boolean(b) => Box::new(b),
             Object::Return(r) => Box::new(r),
+            Object::Function(f) => Box::new(f),
             Object::Null(n) => Box::new(n),
             Object::Error(e) => Box::new(e),
         };
@@ -100,6 +109,25 @@ impl Return {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Function {
+    pub parameters: Vec<String>,
+    pub body: BlockStatement,
+    pub env: Environment,
+}
+impl Function {
+    fn inspect(&self) -> String {
+        format!(
+            "fn ({}) {{\n{}\n}}",
+            self.parameters.join(", "),
+            self.body.string()
+        )
+    }
+    pub fn object_type(&self) -> ObjectType {
+        ObjectType::Function
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Null {}
 impl Null {
     fn inspect(&self) -> String {
@@ -107,7 +135,6 @@ impl Null {
     }
     pub fn object_type(&self) -> ObjectType {
         ObjectType::Null
-    
     }
 }
 
@@ -122,18 +149,4 @@ impl Error {
     pub fn object_type(&self) -> ObjectType {
         ObjectType::Error
     }
-}
-
-fn main() {
-    let five = Object::Integer(Integer { value: 5 });
-    let ten = Object::Integer(Integer { value: 10 });
-    let true_obj = Object::Boolean(Boolean { value: true });
-    let false_obj = Object::Boolean(Boolean { value: false });
-    let null_obj = Object::Null(Null {});
-
-    println!("{}", five.inspect());
-    println!("{}", ten.inspect());
-    println!("{}", true_obj.inspect());
-    println!("{}", false_obj.inspect());
-    println!("{}", null_obj.inspect());
 }

@@ -1,7 +1,7 @@
 use core::panic;
 use std::vec;
 
-use crate::evaluator_utils::object::ObjectType;
+use crate::evaluator_utils::object::{Function, ObjectType};
 use crate::lexer_utils::lexer::Lexer;
 use crate::parser_utils::parser::Parser;
 
@@ -314,17 +314,91 @@ fn test_eval_let_statement() {
             input: "let a = 5; let b = a; b;".to_string(),
             expected: 5,
         },
-        // EvalLet {
-        //     input: "let a = 5; let b = a; let c = a + b + 5; c;".to_string(),
-        //     expected: 15,
-        // },
+        EvalLet {
+            input: "let a = 5; let b = a; let c = a + b + 5; c;".to_string(),
+            expected: 15,
+        },
     ];
 
     for tt in tests {
         let res = evaluate(tt.input.clone());
-        dbg!(&res);
         test_integer_object(res, tt.expected)
     }
+}
+
+#[test]
+fn test_eval_function_application() {
+    struct EvalFunction {
+        input: String,
+        expected: i64,
+    }
+    let tests = vec![
+        EvalFunction {
+            input: "let identity = fn(x) { x; }; identity(5);".to_string(),
+            expected: 5,
+        },
+        EvalFunction {
+            input: "let identity = fn(x) { return x; }; identity(5);".to_string(),
+            expected: 5,
+        },
+        EvalFunction {
+            input: "let double = fn(x) { x * 2; }; double(5);".to_string(),
+            expected: 10,
+        },
+        EvalFunction {
+            input: "let add = fn(x, y) { x + y; }; add(5, 5);".to_string(),
+            expected: 10,
+        },
+        EvalFunction {
+            input: "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));".to_string(),
+            expected: 20,
+        },
+        EvalFunction {
+            input: "fn(x) { x; }(5);".to_string(),
+            expected: 5,
+        },
+    ];
+
+    for tt in tests {
+        let res = evaluate(tt.input.clone());
+        test_integer_object(res, tt.expected)
+    }
+}
+
+#[test]
+fn test_eval_function_object() {
+    let input = "fn(x) { x + 2; };".to_string();
+    let res = evaluate(input);
+    assert_eq!(
+        res.object_type(),
+        ObjectType::Function,
+        "Object is not a Function."
+    );
+    let fn_obj: Function = match res.downcast() {
+        Some(x) => x,
+        None => panic!("Could not downcast to Function"),
+    };
+
+    assert_eq!(fn_obj.parameters.len(), 1, "Function has wrong parameters.",);
+    assert_eq!(
+        fn_obj.parameters.get(0).unwrap(),
+        "x",
+        "Parameter is not 'x'.",
+    );
+}
+
+#[test]
+fn test_closures() {
+    let input = "
+    let newAdder = fn(x) {
+        fn(y) { x + y };
+    };
+    let addTwo = newAdder(2);
+    addTwo(3);
+    "
+    .to_string();
+    let res = evaluate(input);
+    test_integer_object(res, 5);
 }
 
 #[test]

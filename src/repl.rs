@@ -27,7 +27,6 @@ pub fn start() {
             continue;
         }
         let evaluated = eval(&program.statements, &mut env);
-        dbg!(&program.statements);
         println!("{}", evaluated.inspect());
     }
 }

@@ -1,9 +1,10 @@
 use super::{
     environment::Environment,
-    object::{Boolean, Error, Integer, Null, Object, ObjectType, Return},
+    object::{Boolean, Error, Function, Integer, Null, Object, ObjectType, Return},
 };
 use crate::parser_utils::ast::{
-    BlockStatement, Expression, ExpressionStatement, IfExpression, LetStatement, Node, Program, ReturnStatement, Statement
+    BlockStatement, CallExpression, Expression, ExpressionStatement, IfExpression, LetStatement,
+    Node, Program, ReturnStatement, Statement,
 };
 
 pub fn eval(statements: &Vec<Node>, env: &mut Environment) -> Object {
@@ -24,7 +25,7 @@ pub fn eval(statements: &Vec<Node>, env: &mut Environment) -> Object {
     result
 }
 
-fn evaluate_block_statement(node: &BlockStatement,  env: &mut Environment) -> Object {
+fn evaluate_block_statement(node: &BlockStatement, env: &mut Environment) -> Object {
     let mut result: Object = Object::Null(Null {});
     for stmt in &node.statements {
         let obj: Object = match stmt {
@@ -41,7 +42,9 @@ fn evaluate_block_statement(node: &BlockStatement,  env: &mut Environment) -> Ob
 
 fn evaluate_statement(node: &Statement, env: &mut Environment) -> Object {
     match node {
-        Statement::ExpressionStatement(expr) => evaluate_expression_statement(&expr.expression, env),
+        Statement::ExpressionStatement(expr) => {
+            evaluate_expression_statement(&expr.expression, env)
+        }
         Statement::ReturnStatement(rs) => eval_return_statement(rs, env),
         Statement::LetStatement(ls) => eval_let_statement(ls, env),
     }
@@ -53,11 +56,20 @@ fn evaluate_expression_statement(node: &Expression, env: &mut Environment) -> Ob
         Expression::BooleanExpression(b) => Object::Boolean(Boolean { value: b.value }),
         Expression::PrefixExpression(p) => {
             let right = evaluate_expression_statement(&p.right, env);
+            if is_error(&right) {
+                return right;
+            }
             eval_prefix_expression(&p.operator, right)
         }
         Expression::InfixExpression(ie) => {
             let left = evaluate_expression_statement(&ie.left, env);
+            if is_error(&left) {
+                return left;
+            }
             let right = evaluate_expression_statement(&ie.right, env);
+            if is_error(&right) {
+                return right;
+            }
             eval_infix_expression(&ie.operator, left, right)
         }
         Expression::BlockStatement(bs) => evaluate_block_statement(&bs, env),
@@ -66,14 +78,17 @@ fn evaluate_expression_statement(node: &Expression, env: &mut Environment) -> Ob
             None => new_error(format!("Identifier not found: {}", id.value)),
         },
         Expression::IfExpression(ie) => eval_if_else_expression(&ie, env),
+        Expression::FunctionLiteral(fl) => Object::Function(Function {
+            parameters: fl.get_parameters(),
+            body: fl.body.clone(),
+            env: env.clone(),
+        }),
+        Expression::CallExpression(ce) => eval_call_expression(&ce, env), // TODO: Implement recursive functions
         _ => new_error(format!("Unknown expression: {:?}", node)),
     }
 }
 
 fn eval_prefix_expression(operator: &String, right: Object) -> Object {
-    if is_error(&right) {
-        return right;
-    }
     match operator.as_str() {
         "!" => eval_bang_prefix_operator_expression(right),
         "-" => eval_minus_prefix_operator_expression(right),
@@ -108,13 +123,6 @@ fn eval_minus_prefix_operator_expression(right: Object) -> Object {
 }
 
 fn eval_infix_expression(operator: &String, left: Object, right: Object) -> Object {
-    if is_error(&left) {
-        return left;
-    }
-    if is_error(&right) {
-        return right;
-    }
-
     if left.object_type() == ObjectType::Integer && right.object_type() == ObjectType::Integer {
         return eval_integer_infix_expression(
             operator,
@@ -205,7 +213,7 @@ fn is_truthy(obj: Object) -> bool {
     }
 }
 
-fn eval_return_statement(rs: &ReturnStatement,  env: &mut Environment) -> Object {
+fn eval_return_statement(rs: &ReturnStatement, env: &mut Environment) -> Object {
     let val = evaluate_expression_statement(&rs.return_value, env);
     if is_error(&val) {
         return val;
@@ -215,13 +223,54 @@ fn eval_return_statement(rs: &ReturnStatement,  env: &mut Environment) -> Object
     })
 }
 
-fn eval_let_statement(ls: &LetStatement, mut env: &mut Environment) -> Object {
+fn eval_let_statement(ls: &LetStatement, env: &mut Environment) -> Object {
     let val = evaluate_expression_statement(&ls.value, env);
     if is_error(&val) {
         return val;
     }
     env.set(ls.name.value.clone(), val.clone());
-    return val
+    return val;
+}
+
+fn eval_call_expression(ce: &CallExpression, env: &mut Environment) -> Object {
+    let function = evaluate_expression_statement(&ce.function, env);
+    if is_error(&function) {
+        return function;
+    }
+    let args: Vec<Object> = ce
+        .arguments
+        .iter()
+        .map(|arg| evaluate_expression_statement(arg, env))
+        .collect();
+    if args.iter().any(|arg| is_error(arg)) {
+        return args[0].clone();
+    }
+    apply_function(function, args)
+}
+
+fn apply_function(function: Object, args: Vec<Object>) -> Object {
+    if function.object_type() != ObjectType::Function {
+        return new_error(format!("Not a function: {:?}", function.object_type()));
+    }
+    let func_obj = function.downcast().unwrap();
+    let mut extended_env = extend_function_env(&func_obj, args);
+    let evaluated = eval(&func_obj.body.statements, &mut extended_env);
+    unwrap_return_value(evaluated)
+}
+
+fn extend_function_env(function: &Function, args: Vec<Object>) -> Environment {
+    let mut env = Environment::new_enclosed(function.env.clone());
+    for (i, param) in function.parameters.iter().enumerate() {
+        env.set(param.to_owned(), args[i].clone())
+    }
+    env
+}
+
+fn unwrap_return_value(obj: Object) -> Object {
+    if obj.object_type() == ObjectType::Return {
+        return obj.get_return_value();
+    }
+    obj
 }
 
 fn new_error(msg: String) -> Object {

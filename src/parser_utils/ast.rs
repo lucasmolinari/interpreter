@@ -351,6 +351,9 @@ impl FunctionLiteral {
             self.body.string()
         )
     }
+    pub fn get_parameters(&self) -> Vec<String> {
+        self.parameters.iter().map(|x| x.value.clone()).collect()
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
