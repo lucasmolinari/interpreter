@@ -48,7 +48,7 @@ impl Parser {
             (TokenType::MINUS, Precedence::SUM),
             (TokenType::ASTERISK, Precedence::PRODUCT),
             (TokenType::SLASH, Precedence::PRODUCT),
-            (TokenType::LPAREN, Precedence::CALL)
+            (TokenType::LPAREN, Precedence::CALL),
         ]);
 
         let mut p = Parser {
@@ -99,7 +99,7 @@ impl Parser {
             if stmt.is_ok() {
                 prg.statements.push(stmt.unwrap());
             }
-            self.next_token();
+            self.next_token()
         }
         prg
     }
@@ -143,10 +143,9 @@ impl Parser {
 
         self.next_token();
 
-        if self.cur_token_is(TokenType::SEMICOLON) {
+        if self.peek_token_is(TokenType::SEMICOLON) {
             self.next_token();
         }
-        
         Ok(stmt)
     }
 
@@ -164,10 +163,10 @@ impl Parser {
             return_value: return_value,
         }));
 
-        if self.cur_token_is(TokenType::SEMICOLON) {
+        if self.peek_token_is(TokenType::SEMICOLON) {
             self.next_token();
         }
-        
+
         Ok(stmt)
     }
 
@@ -314,22 +313,22 @@ impl Parser {
     pub fn parse_function_literal(&mut self) -> Result<Expression, String> {
         let token = self.cur_token.clone();
         if self.expect_peek(TokenType::LPAREN).is_err() {
-            return Err("Expected '(' ".to_string())
+            return Err("Expected '(' ".to_string());
         }
         let parameters = self.parse_function_parameters();
         if parameters.is_err() {
-            return Err(parameters.unwrap_err())
+            return Err(parameters.unwrap_err());
         }
 
         if self.expect_peek(TokenType::LBRACE).is_err() {
-            return Err("Expected '{'".to_string())
+            return Err("Expected '{'".to_string());
         }
-     
+
         let body = self.parse_block_statement();
-        Ok(Expression::FunctionLiteral(FunctionLiteral{
+        Ok(Expression::FunctionLiteral(FunctionLiteral {
             token: token,
             parameters: parameters.unwrap(),
-            body: body
+            body: body,
         }))
     }
 
@@ -353,14 +352,14 @@ impl Parser {
 
     pub fn parse_function_parameters(&mut self) -> Result<Vec<Identifier>, String> {
         let mut identifiers: Vec<Identifier> = Vec::new();
-        
+
         if self.peek_token_is(TokenType::RPAREN) {
             self.next_token();
-            return Ok(identifiers)
+            return Ok(identifiers);
         }
-        
+
         self.next_token();
-        
+
         identifiers.push(Identifier {
             token: self.cur_token.clone(),
             value: self.cur_token.literal.clone(),
@@ -385,26 +384,26 @@ impl Parser {
         let token = self.cur_token.clone();
         let arguments = self.parse_call_arguments();
         if arguments.is_err() {
-            return Err(arguments.unwrap_err())
+            return Err(arguments.unwrap_err());
         }
 
-        Ok(Expression::CallExpression(CallExpression{
+        Ok(Expression::CallExpression(CallExpression {
             token: token,
             function: Box::new(function),
             arguments: arguments.unwrap(),
         }))
     }
-    
+
     pub fn parse_call_arguments(&mut self) -> Result<Vec<Expression>, String> {
         let mut args: Vec<Expression> = Vec::new();
 
-        if self.peek_token_is(TokenType::RPAREN){
+        if self.peek_token_is(TokenType::RPAREN) {
             self.next_token();
-            return Ok(args)
+            return Ok(args);
         }
 
         self.next_token();
-        
+
         args.push(self.parse_expression(Precedence::LOWEST).unwrap());
 
         while self.peek_token_is(TokenType::COMMA) {
@@ -413,7 +412,7 @@ impl Parser {
             args.push(self.parse_expression(Precedence::LOWEST).unwrap());
         }
         if self.expect_peek(TokenType::RPAREN).is_err() {
-            return Err("Expected ')'".to_string())
+            return Err("Expected ')'".to_string());
         }
         Ok(args)
     }
