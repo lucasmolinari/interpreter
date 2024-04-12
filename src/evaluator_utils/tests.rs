@@ -5,14 +5,15 @@ use crate::evaluator_utils::object::ObjectType;
 use crate::lexer_utils::lexer::Lexer;
 use crate::parser_utils::parser::Parser;
 
+use super::environment::Environment;
 use super::evaluator::eval;
-use super::object::{Boolean, Integer, Null, Object, Error};
+use super::object::{Boolean, Error, Integer, Null, Object};
 
 fn evaluate(input: String) -> Object {
     let l = Lexer::new(input);
     let mut p = Parser::new(l);
     let program = p.parse_program();
-    eval(&program.statements)
+    eval(&program.statements, &mut Environment::new())
 }
 
 #[test]
@@ -295,48 +296,87 @@ fn test_eval_return_statement() {
 }
 
 #[test]
-fn test_error_handling(){
+fn test_eval_let_statement() {
+    struct EvalLet {
+        input: String,
+        expected: i64,
+    }
+    let tests = vec![
+        EvalLet {
+            input: "let a = 5; a;".to_string(),
+            expected: 5,
+        },
+        EvalLet {
+            input: "let a = 5 * 5; a;".to_string(),
+            expected: 25,
+        },
+        EvalLet {
+            input: "let a = 5; let b = a; b;".to_string(),
+            expected: 5,
+        },
+        // EvalLet {
+        //     input: "let a = 5; let b = a; let c = a + b + 5; c;".to_string(),
+        //     expected: 15,
+        // },
+    ];
+
+    for tt in tests {
+        let res = evaluate(tt.input.clone());
+        dbg!(&res);
+        test_integer_object(res, tt.expected)
+    }
+}
+
+#[test]
+fn test_error_handling() {
     struct ErrorHandling {
-        input: String, 
-        expected: String
+        input: String,
+        expected: String,
     }
     let tests = vec![
         ErrorHandling {
             input: "5 + true;".to_string(),
-            expected: "Type mismatch: Integer + Boolean".to_string()
+            expected: "Type mismatch: Integer + Boolean".to_string(),
         },
         ErrorHandling {
             input: "5 + true; 5;".to_string(),
-            expected: "Type mismatch: Integer + Boolean".to_string()
+            expected: "Type mismatch: Integer + Boolean".to_string(),
         },
         ErrorHandling {
             input: "-true".to_string(),
-            expected: "Unknown operator: -Boolean".to_string()
+            expected: "Unknown operator: -Boolean".to_string(),
         },
         ErrorHandling {
             input: "true + false;".to_string(),
-            expected: "Unknown operator: Boolean + Boolean".to_string()
+            expected: "Unknown operator: Boolean + Boolean".to_string(),
         },
         ErrorHandling {
             input: "5; true + false; 5".to_string(),
-            expected: "Unknown operator: Boolean + Boolean".to_string()
+            expected: "Unknown operator: Boolean + Boolean".to_string(),
         },
         ErrorHandling {
             input: "if (10 > 1) { true + false; }".to_string(),
-            expected: "Unknown operator: Boolean + Boolean".to_string()
+            expected: "Unknown operator: Boolean + Boolean".to_string(),
         },
         ErrorHandling {
             input: "if (10 > 1) { if (10 > 1) { return true + false; } return 1; }".to_string(),
-            expected: "Unknown operator: Boolean + Boolean".to_string()
+            expected: "Unknown operator: Boolean + Boolean".to_string(),
+        },
+        ErrorHandling {
+            input: "foobar".to_string(),
+            expected: "Identifier not found: foobar".to_string(),
         },
     ];
 
     for tt in tests {
         let evaluated = evaluate(tt.input.clone());
-        assert_eq!(evaluated.object_type(), ObjectType::Error, "No error object returned");
+        assert_eq!(
+            evaluated.object_type(),
+            ObjectType::Error,
+            "No error object returned"
+        );
         assert_eq!(evaluated.inspect(), tt.expected, "Wrong error message");
     }
-
 }
 
 fn test_integer_object(object: Object, expected: i64) {

@@ -1,10 +1,11 @@
-use crate::lexer_utils::lexer::Lexer;
-use crate::parser_utils::parser::Parser;
 use crate::evaluator_utils::evaluator::eval;
+use crate::parser_utils::parser::Parser;
+use crate::{evaluator_utils::environment::Environment, lexer_utils::lexer::Lexer};
 use std::io::{self, Write};
 
 pub fn start() {
     println!("q! for exit.");
+    let mut env = Environment::new();
     loop {
         let mut input = String::new();
         print!(">> ");
@@ -25,7 +26,8 @@ pub fn start() {
             print_parse_errors(p.errors());
             continue;
         }
-        let evaluated = eval(&program.statements);
+        let evaluated = eval(&program.statements, &mut env);
+        dbg!(&program.statements);
         println!("{}", evaluated.inspect());
     }
 }
